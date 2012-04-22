@@ -145,14 +145,16 @@ void loop()
 			byte instructionByte = Serial.read();
 			if (instructionByte != MocoProtocolPlaybackFrameDataHeader)
 			{
+				digitalWriteFast(ledPin, HIGH);
+				sendDebugStringToComputer(String(instructionByte, DEC));
 				processSingleByteInstruction(instructionByte);
 			}
 			else
 			{
 				while(Serial.available() < 5){}
-
+				
 				if (Serial.read() != MocoAxisCameraTilt){
-					digitalWriteFast(ledPin, HIGH);
+					
 				}
 				else{
 					tilt_nextTarget = serialReadLong();
@@ -195,11 +197,6 @@ void loop()
 		tilt_Target = controllerTiltEncoder_Position - tilt_TargetOffset;
 	}
 	
-
-	
-	
-    
-    
 	if (timingDebug) {
 	    if (micros() - start > 1800) {
 	    Serial.println(loopCount);
@@ -228,11 +225,13 @@ void processSingleByteInstruction(byte receivedByte){
 	}
 	else if (receivedByte == MocoProtocolStopSendingAxisDataInstruction){
 		stopLiveDataStreamToComputer();
+		Serial.flush();
 	}
 	else if (receivedByte == MocoProtocolStartPlaybackInstruction){
 		if (isStreaming){
 			stopLiveDataStreamToComputer();
 		}
+		Serial.flush();
 		startPlaybackFromComputer();
 	}
 	else if (receivedByte == MocoProtocolStopPlaybackInstruction){
@@ -294,7 +293,7 @@ void updateAxisPositionsFromPlayback()
 	//FOR NOW:
 	if(needsFreshData == true)
 	{
-		//digitalWriteFast(ledPin, HIGH);
+	//	digitalWriteFast(ledPin, HIGH);
 	}
 	tilt_Target = tilt_nextTarget; //effectively a virtual sync
 	needsFreshData = true;
@@ -337,7 +336,11 @@ void writeHandshakeSuccessToComputer()
 	serialWriteLong((long)MocoProtocolHandshakeSuccessfulResponse);
 }
 
-
+void sendDebugStringToComputer(String str)
+{
+	Serial.write(MocoProtocolNewlineDelimitedDebugStringResponseType);
+	Serial.println(str);
+}
 
 
 void writeAxisResolutionsToComputer()
