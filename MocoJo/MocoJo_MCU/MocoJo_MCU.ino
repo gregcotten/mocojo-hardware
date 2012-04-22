@@ -16,6 +16,7 @@ const boolean isSlave = true;
 boolean isInitialized = false;
 boolean isStreaming = false;
 boolean isPlayback = false;
+boolean firstLoop = true;
 const int framesPerSecond = 50;
 
 long tilt_nextTarget = 0; //temp
@@ -32,7 +33,7 @@ long start = 0; //for timing debug
 long loopCount = 0; //for timing debug
 //----------------------------------------
 
-
+long controllerTiltEncoder_Offset;
 long controllerTiltEncoder_Position = 0;
 long controllerTiltEncoder_RevolutionCount = 0;
 long controllerTiltEncoder_AbsolutePosition = 0;
@@ -55,10 +56,11 @@ const int tiltServo_PwmPin = 11;
 const long tilt_MotorSpeedCenter = 1500;
 long tilt_MotorSpeed = 1500;
 long tiltEncoder_Position = 0;
-long tiltEncoder_Resolution = 4096;
+long tiltEncoder_Resolution = 4095;
 long tiltEncoder_RevolutionCount = 0;
 long tiltEncoder_AbsolutePosition = 0;
 long tiltEncoder_PreviousAbsolutePosition = 2047; //middle point so a rev is not counted at start
+
 //
 
 //****ENCODER****
@@ -68,6 +70,7 @@ const int tiltEncoder_clockPin = 3; //output to clock
 
 //****PID****
 long tilt_Target;
+
 //correction = Kp * error + Kd * (error - prevError) + kI * (sum of errors)
 //PID controller constants
 float tilt_KP = 1.8; //position multiplier (gain)
@@ -143,25 +146,38 @@ void loop()
 				if (receivedByte == MocoProtocolStartSendingAxisDataInstruction){
 					startLiveDataStreamToComputer();
 				}
-				if (receivedByte == MocoProtocolStopSendingAxisDataInstruction){
+				else if (receivedByte == MocoProtocolStopSendingAxisDataInstruction){
 					stopLiveDataStreamToComputer();
 				}
-				if (receivedByte == MocoProtocolStartPlaybackInstruction){
+				else if (receivedByte == MocoProtocolStartPlaybackInstruction){
 					if (isStreaming){
 						stopLiveDataStreamToComputer();
 					}
 					startPlaybackFromComputer();
 				}
-				if (receivedByte == MocoProtocolStopPlaybackInstruction){
+				else if (receivedByte == MocoProtocolStopPlaybackInstruction){
 					stopPlaybackFromComputer();
 				}
+				else if (receivedByte == MocoProtocolRequestAxisResolutionDataInstruction){
+					writeAxisResolutionsToComputer();
+				}
 			}
-			if (!isPlayback){
-				updateControllerTiltEncoder();
-				tilt_Target = controllerTiltEncoder_Position/2;
-			}
+			
 		}
 	}
+	
+
+	
+	if (!isPlayback){
+		updateControllerTiltEncoder();
+		if (firstLoop){
+			firstLoop=false;
+		//	controllerTiltEncoder_Offset = tiltEncoder_Position;
+		}
+		tilt_Target = controllerTiltEncoder_Position;// - controllerTiltEncoder_Offset;
+	}
+	
+
 	
 	
     updateTiltPID();
@@ -238,31 +254,32 @@ void updateAxisPositionsFromPlayback()
 	
 	//FOR NOW:
 	tilt_Target = tilt_nextTarget; //effectively a virtual sync
-	writeAdvancePositionsToComputer();
-	
-	while(Serial.available() < 6){}
-	Serial.read();
-	if(Serial.read() != MocoAxisCameraTilt){
-		digitalWriteFast(ledPin, HIGH);
-	}
+	writeRequestsForNextPositionToComputer();
+	readNextPositionsFromComputer();
 
-	tilt_nextTarget = serialReadLong();
+	
 	
 }
 
-void writeAdvancePositionsToComputer()
+void writeRequestsForNextPositionToComputer()
 {
-	Serial.write(MocoProtocolAdvancePositionsRequestType); //request next positions
-	Serial.write(1);//fluff
-	Serial.write(1);
-	Serial.write(1);
-	Serial.write(1);
-	Serial.write(1);
+	//TEMP - eventually will interate through all online axes
+	Serial.write(MocoProtocolAdvancePositionRequestType); //request next positions
+	Serial.write(MocoAxisCameraTilt);
+	serialWriteLong(tiltEncoder_Position);
+}
+
+void readNextPositionsFromComputer()
+{
+	//TEMP - eventually will interate through all online axes
+	Serial.read();
+	Serial.read();
+	tilt_nextTarget = serialReadLong();
 }
 
 void writeAxisPositionsToComputer()
 {
-	
+	//TEMP - eventually will interate through all online axes
 	Serial.write(MocoProtocolAxisPositionResponseType);//we are sending axis position data
 	Serial.write(MocoAxisCameraTilt);//we are saying this is the tilt
 	serialWriteLong(tiltEncoder_Position);
