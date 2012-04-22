@@ -33,7 +33,7 @@ long start = 0; //for timing debug
 long loopCount = 0; //for timing debug
 //----------------------------------------
 
-long controllerTiltEncoder_Offset;
+long tilt_TargetOffset;
 long controllerTiltEncoder_Position = 0;
 long controllerTiltEncoder_RevolutionCount = 0;
 long controllerTiltEncoder_AbsolutePosition = 0;
@@ -130,35 +130,38 @@ isInitialized = false;
 }
 
 boolean needsFreshData = false;
-boolean hasData = false;
+boolean sentRequestsForFreshData = false;
+boolean firstTime = true;
 void loop()
 {
 	if (isSlave){
 		
 		if(needsFreshData && isPlayback){
-			writeRequestsForNextPositionToComputer();
-			hasData = false;
-			while(hasData == false){ //wait for correct instruction
-				byte instructionByte = Serial.read();
-				if (instructionByte != MocoProtocolPlaybackFrameDataHeader)
-				{
-					processSingleByteInstruction(instructionByte);
-				}
-				else
-				{
-					hasData =true;
-				}
+			if(!sentRequestsForFreshData){
+				writeRequestsForNextPositionToComputer();
+				sentRequestsForFreshData = true;
 			}
 			
-			while(Serial.available() < 5){}
-			
-			if (Serial.read() != MocoAxisCameraTilt){
-					
+			byte instructionByte = Serial.read();
+			if (instructionByte != MocoProtocolPlaybackFrameDataHeader)
+			{
+				processSingleByteInstruction(instructionByte);
 			}
-			//tilt_nextTarget = serialReadLong();
-			tilt_nextTarget = serialReadLong();
-			needsFreshData = false;
-			
+			else
+			{
+				while(Serial.available() < 5){}
+
+				if (Serial.read() != MocoAxisCameraTilt){
+					digitalWriteFast(ledPin, HIGH);
+				}
+				else{
+					tilt_nextTarget = serialReadLong();
+					needsFreshData = false;
+					sentRequestsForFreshData = false;
+				}
+				
+				
+			}
 		}
 		
 		if(!isInitialized){
@@ -178,19 +181,24 @@ void loop()
 		}
 	}
 	
-
+	updateTiltPID();
+    updateTiltEncoder();
+    updateTiltPWM();
+	updateControllerTiltEncoder();
 	
 	if (!isPlayback){
-		updateControllerTiltEncoder();
-		tilt_Target = controllerTiltEncoder_Position;// - controllerTiltEncoder_Offset;
+		
+		if (firstTime){
+			tilt_TargetOffset = controllerTiltEncoder_Position - tiltEncoder_Position;
+			firstTime = false;
+		}
+		tilt_Target = controllerTiltEncoder_Position - tilt_TargetOffset;
 	}
 	
 
 	
 	
-    updateTiltPID();
-    updateTiltEncoder();
-    updateTiltPWM();
+    
     
 	if (timingDebug) {
 	    if (micros() - start > 1800) {
@@ -225,7 +233,6 @@ void processSingleByteInstruction(byte receivedByte){
 		if (isStreaming){
 			stopLiveDataStreamToComputer();
 		}
-		Serial.flush();
 		startPlaybackFromComputer();
 	}
 	else if (receivedByte == MocoProtocolStopPlaybackInstruction){
@@ -234,6 +241,8 @@ void processSingleByteInstruction(byte receivedByte){
 	else if (receivedByte == MocoProtocolRequestAxisResolutionDataInstruction){
 		writeAxisResolutionsToComputer();
 	}
+	
+	
 }
 
 void initSlaveMCU()
@@ -258,6 +267,7 @@ void startPlaybackFromComputer()
 {
 	isPlayback = true;
 	needsFreshData = false;
+	sentRequestsForFreshData = false;
 	
 	//needs to seek to first position
 	MsTimer2::set(20, updateAxisPositionsFromPlayback);
@@ -284,7 +294,7 @@ void updateAxisPositionsFromPlayback()
 	//FOR NOW:
 	if(needsFreshData == true)
 	{
-		digitalWriteFast(ledPin, HIGH);
+		//digitalWriteFast(ledPin, HIGH);
 	}
 	tilt_Target = tilt_nextTarget; //effectively a virtual sync
 	needsFreshData = true;
