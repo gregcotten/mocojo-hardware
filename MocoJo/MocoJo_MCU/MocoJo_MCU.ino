@@ -129,38 +129,43 @@ isInitialized = false;
 //delay(2000);
 }
 
+boolean needsFreshData = false;
+
 void loop()
 {
 	if (isSlave){
+		
+		if(needsFreshData && isPlayback){
+			writeRequestsForNextPositionToComputer();
+			while(Serial.available() < 6){}
+			byte instructionByte = Serial.read();
+			if (instructionByte != MocoProtocolPlaybackFrameDataHeader)
+			{
+				processSingleByteInstruction(instructionByte);
+			}
+			else{
+				if (Serial.read() != MocoAxisCameraTilt){
+					
+				}
+				//tilt_nextTarget = serialReadLong();
+				tilt_nextTarget = serialReadLong();
+				needsFreshData = false;
+			}
+			
+		}
+		
 		if(!isInitialized){
 			if(Serial.read() == MocoProtocolRequestHandshakeInstruction)
 			{
 				initSlaveMCU();
 				writeHandshakeSuccessToComputer();
-				digitalWriteFast(ledPin, HIGH);
+			//	digitalWriteFast(ledPin, HIGH);
 			}
 		}
 		else {
 			if(Serial.available()){
-				byte receivedByte = Serial.read();
-				if (receivedByte == MocoProtocolStartSendingAxisDataInstruction){
-					startLiveDataStreamToComputer();
-				}
-				else if (receivedByte == MocoProtocolStopSendingAxisDataInstruction){
-					stopLiveDataStreamToComputer();
-				}
-				else if (receivedByte == MocoProtocolStartPlaybackInstruction){
-					if (isStreaming){
-						stopLiveDataStreamToComputer();
-					}
-					startPlaybackFromComputer();
-				}
-				else if (receivedByte == MocoProtocolStopPlaybackInstruction){
-					stopPlaybackFromComputer();
-				}
-				else if (receivedByte == MocoProtocolRequestAxisResolutionDataInstruction){
-					writeAxisResolutionsToComputer();
-				}
+				 
+				processSingleByteInstruction(Serial.read());
 			}
 			
 		}
@@ -170,10 +175,6 @@ void loop()
 	
 	if (!isPlayback){
 		updateControllerTiltEncoder();
-		if (firstLoop){
-			firstLoop=false;
-		//	controllerTiltEncoder_Offset = tiltEncoder_Position;
-		}
 		tilt_Target = controllerTiltEncoder_Position;// - controllerTiltEncoder_Offset;
 	}
 	
@@ -206,6 +207,27 @@ void loop()
     
 }
 
+void processSingleByteInstruction(byte receivedByte){
+	if (receivedByte == MocoProtocolStartSendingAxisDataInstruction){
+		startLiveDataStreamToComputer();
+	}
+	else if (receivedByte == MocoProtocolStopSendingAxisDataInstruction){
+		stopLiveDataStreamToComputer();
+	}
+	else if (receivedByte == MocoProtocolStartPlaybackInstruction){
+		if (isStreaming){
+			stopLiveDataStreamToComputer();
+		}
+		startPlaybackFromComputer();
+	}
+	else if (receivedByte == MocoProtocolStopPlaybackInstruction){
+		stopPlaybackFromComputer();
+	}
+	else if (receivedByte == MocoProtocolRequestAxisResolutionDataInstruction){
+		writeAxisResolutionsToComputer();
+	}
+}
+
 void initSlaveMCU()
 {
 	isInitialized = true;
@@ -227,6 +249,8 @@ void stopLiveDataStreamToComputer()
 void startPlaybackFromComputer()
 {
 	isPlayback = true;
+	needsFreshData = false;
+	
 	//needs to seek to first position
 	MsTimer2::set(20, updateAxisPositionsFromPlayback);
 	MsTimer2::start();
@@ -238,10 +262,7 @@ void stopPlaybackFromComputer()
 	MsTimer2::stop();
 }
 
-byte byte1;
-byte byte2;
-byte byte3;
-byte byte4;
+
 
 void updateAxisPositionsFromPlayback()
 {
@@ -253,18 +274,21 @@ void updateAxisPositionsFromPlayback()
 	
 	
 	//FOR NOW:
+	if(needsFreshData == true)
+	{
+		digitalWriteFast(ledPin, HIGH);
+	}
 	tilt_Target = tilt_nextTarget; //effectively a virtual sync
-	writeRequestsForNextPositionToComputer();
-	readNextPositionsFromComputer();
+	needsFreshData = true;
+	
+	
 
-	
-	
 }
 
 void writeRequestsForNextPositionToComputer()
 {
 	//TEMP - eventually will interate through all online axes
-	Serial.write(MocoProtocolAdvancePositionRequestType); //request next positions
+	Serial.write(MocoProtocolAdvancePlaybackRequestType); //request next positions
 	Serial.write(MocoAxisCameraTilt);
 	serialWriteLong(tiltEncoder_Position);
 }
@@ -272,6 +296,7 @@ void writeRequestsForNextPositionToComputer()
 void readNextPositionsFromComputer()
 {
 	//TEMP - eventually will interate through all online axes
+	while(Serial.available() < 5){}
 	Serial.read();
 	Serial.read();
 	tilt_nextTarget = serialReadLong();
