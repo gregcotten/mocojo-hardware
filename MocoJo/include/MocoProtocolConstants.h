@@ -13,7 +13,7 @@ enum {
     // Axis Data
     MocoProtocolStartSendingAxisDataInstruction = 1,
     MocoProtocolStopSendingAxisDataInstruction =  0,
-    MocoProtocolRequestAxisResolutionDataInstruction = 0,
+    MocoProtocolRequestAxisResolutionDataInstruction = 4,
 	
     // Playback
     MocoProtocolStartPlaybackInstruction = 2,
@@ -40,7 +40,7 @@ typedef enum {
     MocoProtocolHandshakeResponseType        =  0,
     MocoProtocolAxisPositionResponseType     =  1,
     MocoProtocolAxisResolutionResponseType   =  2,
-	MocoProtocolAdvancePositionsRequestType  =  3
+	MocoProtocolAdvancePositionRequestType  =  3
 } MocoProtocolResponseType;
 
 // Responses
