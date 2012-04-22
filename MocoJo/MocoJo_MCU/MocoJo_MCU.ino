@@ -130,27 +130,34 @@ isInitialized = false;
 }
 
 boolean needsFreshData = false;
-
+boolean hasData = false;
 void loop()
 {
 	if (isSlave){
 		
 		if(needsFreshData && isPlayback){
 			writeRequestsForNextPositionToComputer();
-			while(Serial.available() < 6){}
-			byte instructionByte = Serial.read();
-			if (instructionByte != MocoProtocolPlaybackFrameDataHeader)
-			{
-				processSingleByteInstruction(instructionByte);
-			}
-			else{
-				if (Serial.read() != MocoAxisCameraTilt){
-					
+			hasData = false;
+			while(hasData == false){ //wait for correct instruction
+				byte instructionByte = Serial.read();
+				if (instructionByte != MocoProtocolPlaybackFrameDataHeader)
+				{
+					processSingleByteInstruction(instructionByte);
 				}
-				//tilt_nextTarget = serialReadLong();
-				tilt_nextTarget = serialReadLong();
-				needsFreshData = false;
+				else
+				{
+					hasData =true;
+				}
 			}
+			
+			while(Serial.available() < 5){}
+			
+			if (Serial.read() != MocoAxisCameraTilt){
+					
+			}
+			//tilt_nextTarget = serialReadLong();
+			tilt_nextTarget = serialReadLong();
+			needsFreshData = false;
 			
 		}
 		
@@ -218,6 +225,7 @@ void processSingleByteInstruction(byte receivedByte){
 		if (isStreaming){
 			stopLiveDataStreamToComputer();
 		}
+		Serial.flush();
 		startPlaybackFromComputer();
 	}
 	else if (receivedByte == MocoProtocolStopPlaybackInstruction){
@@ -280,6 +288,7 @@ void updateAxisPositionsFromPlayback()
 	}
 	tilt_Target = tilt_nextTarget; //effectively a virtual sync
 	needsFreshData = true;
+	
 	
 	
 
