@@ -6,7 +6,7 @@ enum {
     
     // Basics
     MocoProtocolBaudRate = 1000000,
-    MocoProtocolFrameRate = 10,
+    MocoProtocolFrameRate = 50,
     
     // Handshake
     MocoProtocolRequestHandshakeInstruction = 6,
