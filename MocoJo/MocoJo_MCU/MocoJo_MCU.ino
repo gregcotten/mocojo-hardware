@@ -135,7 +135,6 @@ isInitialized = false;
 boolean needsFreshData = false;
 boolean sentRequestsForFreshData = false;
 boolean firstTime = true;
-void loop()
 {
 	if (isSlave){
 		
@@ -158,12 +157,12 @@ void loop()
 		if(isPlayback){
 			if(!sentRequestsForFreshData){
 				if(needsFreshData){
-					sendDebugStringToComputer("Sending Request for Data");
+					//sendDebugStringToComputer("Sending Request for Data");
 					writeRequestsForNextPositionToComputer();
 					sentRequestsForFreshData = true;
 					start = millis();
 					
-					sendDebugStringToComputer(String(sentRequestsForFreshData)+ " " + String(needsFreshData));
+					//sendDebugStringToComputer(String(sentRequestsForFreshData)+ " " + String(needsFreshData));
 					while(Serial.available() < 1){}
 					byte instructionByte = Serial.read();
 					if (instructionByte == MocoProtocolPlaybackFrameDataHeader){
@@ -292,8 +291,8 @@ void stopPlaybackFromComputer()
 {
 	needsFreshData = false;
 	isPlayback = false;
-	digitalWriteFast(ledPin, HIGH);
 	MsTimer2::stop();
+	digitalWriteFast(ledPin, LOW);
 }
 
 
