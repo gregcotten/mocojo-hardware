@@ -135,6 +135,14 @@ isInitialized = false;
 boolean needsFreshData = false;
 boolean sentRequestsForFreshData = false;
 boolean firstTime = true;
+
+long tilt_TargetBuffer[50];
+volatile int tilt_TargetBuffer_AmountFreshData = 0;
+long tilt_TargetBuffer_currentPosition = 0;
+long tilt_TargetBuffer_currentBufferPosition = 0;
+
+
+void loop()
 {
 	if (isSlave){
 		
@@ -143,48 +151,16 @@ boolean firstTime = true;
 			{
 				initSlaveMCU();
 				writeHandshakeSuccessToComputer();
-			//	digitalWriteFast(ledPin, HIGH);
 			}
 		}
 		else {
 			if(!isPlayback && Serial.available()){
-				 
 				processSingleByteInstruction(Serial.read());
 			}
 		
-			long start;
-		
 		if(isPlayback){
-			if(!sentRequestsForFreshData){
-				if(needsFreshData){
-					//sendDebugStringToComputer("Sending Request for Data");
-					writeRequestsForNextPositionToComputer();
-					sentRequestsForFreshData = true;
-					start = millis();
-					
-					//sendDebugStringToComputer(String(sentRequestsForFreshData)+ " " + String(needsFreshData));
-					while(Serial.available() < 1){}
-					byte instructionByte = Serial.read();
-					if (instructionByte == MocoProtocolPlaybackFrameDataHeader){
-						while(Serial.available() < 1){}
-						byte axisByte = Serial.read();
-						if(axisByte != MocoAxisCameraTilt){
-							sendDebugStringToComputer("Didn't send the correct axis - you sent " + String(axisByte, DEC));
-						}
-						while(Serial.available() < 4){}
-						tilt_nextTarget = serialReadLong();
-						needsFreshData = false;
-						sentRequestsForFreshData = false;
-						sendDebugStringToComputer(String(millis() - start, DEC));
-						sendDebugStringToComputer("Received Position " + String(tilt_nextTarget, DEC));
-					}
-					else
-					{
-						//digitalWriteFast(ledPin, HIGH);
-						sendDebugStringToComputer("Didn't send the correct instruction - you sent " + String(instructionByte, DEC));
-						processSingleByteInstruction(instructionByte);
-					}
-				}
+			if(tilt_TargetBuffer_AmountFreshData < 40 && tilt_TargetBuffer_currentBufferPosition%50 < tilt_TargetBuffer_currentPosition%50){
+				addToTiltBuffer();
 				
 			}
 			
@@ -278,9 +254,19 @@ void stopLiveDataStreamToComputer()
 void startPlaybackFromComputer()
 {
 	isPlayback = true;
-	needsFreshData = true;
-	sentRequestsForFreshData = false;
 	frameCounter = 1;
+	tilt_TargetBuffer_AmountFreshData = 0;
+	tilt_TargetBuffer_currentPosition = 0;
+	tilt_TargetBuffer_currentBufferPosition = 0;
+	sendDebugStringToComputer("Filling Buffer");
+	while(tilt_TargetBuffer_AmountFreshData<50 && isPlayback){
+		addToTiltBuffer();
+	}
+	if(!isPlayback){
+		sendDebugStringToComputer("Playback quit before buffer could fill.");
+		return;
+	}
+	sendDebugStringToComputer("Buffer Filled");
 	
 	//needs to seek to first position
 	MsTimer2::set(1000/MocoProtocolFrameRate, updateAxisPositionsFromPlayback);
@@ -296,6 +282,14 @@ void stopPlaybackFromComputer()
 }
 
 
+void addToTiltBuffer()
+{
+	tilt_TargetBuffer[tilt_TargetBuffer_currentBufferPosition%50] = getNextAxisPositionFromComputer(MocoAxisCameraTilt);
+	tilt_TargetBuffer_AmountFreshData++;
+	tilt_TargetBuffer_currentBufferPosition++;
+}
+
+
 
 void updateAxisPositionsFromPlayback()
 {
@@ -305,33 +299,60 @@ void updateAxisPositionsFromPlayback()
 	//2. request next playback frame -> receive position data
 	//3. distribute position data to servos
 	
-	
-	//FOR NOW:
-	if(needsFreshData == true && frameCounter != 1)
-	{
+	if(tilt_TargetBuffer_currentBufferPosition == tilt_TargetBuffer_currentPosition){
 		digitalWriteFast(ledPin, HIGH);
 	}
-	tilt_Target = tilt_nextTarget; //effectively a virtual sync
-	needsFreshData = true;
+	
+	tilt_Target = tilt_TargetBuffer[tilt_TargetBuffer_currentPosition%50]; //effectively a virtual sync
+	tilt_TargetBuffer_currentPosition++;
+	tilt_TargetBuffer_AmountFreshData--;
+	
 	frameCounter++;
 
 }
 
-void writeRequestsForNextPositionToComputer()
+void writeRequestForNextAxisPositionToComputer(int axisID)
 {
 	//TEMP - eventually will interate through all online axes
 	Serial.write(MocoProtocolAdvancePlaybackRequestType); //request next positions
-	Serial.write(MocoAxisCameraTilt);
+	Serial.write(axisID);
 	serialWriteLong(tiltEncoder_Position);
+}
+
+long getNextAxisPositionFromComputer(int axisID){
+	writeRequestForNextAxisPositionToComputer(axisID);
+	while(Serial.available() < 1){}
+	byte instructionByte = Serial.read();
+	while(instructionByte != MocoProtocolPlaybackFrameDataHeader){
+		sendDebugStringToComputer("Didn't send the correct instruction - you sent " + String(instructionByte, DEC));
+		processSingleByteInstruction(instructionByte);
+		if(!isPlayback){
+			return 0;
+		}
+		while(Serial.available() < 1){}
+		instructionByte = Serial.read();
+	}
+	start =millis();
+	while(Serial.available() < 1){}
+	byte axisByte = Serial.read();
+	if(axisByte != axisID){
+		sendDebugStringToComputer("Didn't send the correct axis - you sent " + String(axisByte, DEC));
+	}
+	while(Serial.available() < 4){}
+	
+	long tmp = serialReadLong();
+	
+	sendDebugStringToComputer(String(millis() - start, DEC));
+	sendDebugStringToComputer("Received Position " + String(tmp, DEC));
+	
+	return tmp;
+	
 }
 
 void readNextPositionsFromComputer()
 {
 	//TEMP - eventually will interate through all online axes
-	while(Serial.available() < 5){}
-	Serial.read();
-	Serial.read();
-	tilt_nextTarget = serialReadLong();
+	
 }
 
 void writeAxisPositionsToComputer()
