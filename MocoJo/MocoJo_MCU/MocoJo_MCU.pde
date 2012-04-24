@@ -137,7 +137,6 @@ void setup()
 boolean needsFreshData = false;
 boolean sentRequestsForFreshData = false;
 boolean firstTime = true;
-boolean onFirstFrameOfPlayback = false;
 
 
 
@@ -153,17 +152,7 @@ void loop()
 {
 	if (isSlave){
 		if(isInitialized){
-			if(isPlayback){
-				//monitor buffer
-				while(tilt_TargetBuffer_AmountFreshData < bufferSize-1 && tilt_TargetBuffer_currentBufferPosition%bufferSize != tilt_TargetBuffer_currentPosition%bufferSize && isPlayback){
-					sendDebugStringToComputer("buffer " + String(tilt_TargetBuffer_currentBufferPosition, DEC) + ", current " + String(tilt_TargetBuffer_currentPosition, DEC), true);
-					addToTiltBuffer();
-					if(tilt_TargetBuffer_currentBufferPosition - tilt_TargetBuffer_currentPosition < 50){
-						digitalWrite(ledPin, HIGH);
-					}
-				}
-			}
-			if(!isPlayback && Serial.available()){
+			if(Serial.available()){
 				processSingleByteInstruction(Serial.read());
 			}
 		}
@@ -197,12 +186,15 @@ void loop()
 	      Serial.println(tilt_MotorSpeed);
 	    }
 	}
+	doDuties();
+}
+
+void doDuties(){
 	/*
 	updateTiltPID();
     updateTiltEncoder();
     updateTiltPWM();
 	*/
-	updateControllerTiltEncoder();
 	updateControllerTiltEncoder();
 
 	if (!isPlayback){
@@ -213,9 +205,6 @@ void loop()
 		}
 		tilt_Target = controllerTiltEncoder_Position - tilt_TargetOffset;
 	}
-	
-	
-    
 }
 
 void processSingleByteInstruction(byte receivedByte){
@@ -275,7 +264,6 @@ void stopLiveDataStreamToComputer()
 void startPlaybackFromComputer()
 {
 	isPlayback = true;
-	onFirstFrameOfPlayback = true;
 	frameCounter = 1;
 	tilt_TargetBuffer_AmountFreshData = 0;
 	tilt_TargetBuffer_currentPosition = 0;
@@ -293,12 +281,24 @@ void startPlaybackFromComputer()
 	//needs to seek to first position
 	MocoTimer1::set(1.0/(float)MocoProtocolFrameRate, updateAxisPositionsFromPlayback);
 	MocoTimer1::start();
+	
+	while(isPlayback){
+		if (tilt_TargetBuffer_AmountFreshData < bufferSize-1 && tilt_TargetBuffer_currentBufferPosition%bufferSize != tilt_TargetBuffer_currentPosition%bufferSize){
+			if(tilt_TargetBuffer_currentBufferPosition - tilt_TargetBuffer_currentPosition < 10){
+				digitalWrite(ledPin, HIGH);
+			}
+			sendDebugStringToComputer("buffer " + String(tilt_TargetBuffer_currentBufferPosition, DEC) + ", current " + String(tilt_TargetBuffer_currentPosition, DEC), true);
+			addToTiltBuffer();
+			
+		}
+		doDuties();
+	}
+	
 }
 
 void stopPlaybackFromComputer()
 {
 	isPlayback = false;
-	onFirstFrameOfPlayback = false;
 	MocoTimer1::stop();
 	writePlaybackHasCompletedToComputer();
 	digitalWrite(ledPin, LOW);
@@ -326,9 +326,8 @@ void updateAxisPositionsFromPlayback()
 		sendDebugStringToComputer("Oh Fuck", true);
 	}
 	
-	if(onFirstFrameOfPlayback){
+	if(frameCounter == 1){
 		writePlaybackHasStartedToComputer();
-		onFirstFrameOfPlayback = false;
 	}
 	
 	tilt_Target = tilt_TargetBuffer[tilt_TargetBuffer_currentPosition%bufferSize]; //effectively a virtual sync
