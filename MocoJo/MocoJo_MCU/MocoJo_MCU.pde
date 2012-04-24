@@ -138,6 +138,7 @@ boolean firstTime = true;
 
 
 int bufferSize = MocoProtocolFrameRate*2;
+int bufferLowSizeWarning = MocoProtocolFrameRate/2;
 long tilt_TargetBuffer[MocoProtocolFrameRate*2];
 volatile int tilt_TargetBuffer_AmountFreshData = 0;
 long tilt_TargetBuffer_currentPosition = 0;
@@ -280,7 +281,7 @@ void startPlaybackFromComputer()
 	
 	while(isPlayback){
 		if (tilt_TargetBuffer_AmountFreshData < bufferSize-1 && tilt_TargetBuffer_currentBufferPosition%bufferSize != tilt_TargetBuffer_currentPosition%bufferSize){
-			if(tilt_TargetBuffer_currentBufferPosition - tilt_TargetBuffer_currentPosition < 10){
+			if(tilt_TargetBuffer_AmountFreshData < bufferLowSizeWarning){
 				digitalWrite(ledPin, HIGH);
 			}
 			sendDebugStringToComputer("buffer " + String(tilt_TargetBuffer_currentBufferPosition, DEC) + ", current " + String(tilt_TargetBuffer_currentPosition, DEC), false);
