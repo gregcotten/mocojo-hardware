@@ -156,7 +156,7 @@ void loop()
 			if(isPlayback){
 				//monitor buffer
 				while(tilt_TargetBuffer_AmountFreshData < bufferSize-1 && tilt_TargetBuffer_currentBufferPosition%bufferSize != tilt_TargetBuffer_currentPosition%bufferSize && isPlayback){
-				//	sendDebugStringToComputer("buffer " + String(tilt_TargetBuffer_currentBufferPosition, DEC) + ", current " + String(tilt_TargetBuffer_currentPosition, DEC), true);
+					sendDebugStringToComputer("buffer " + String(tilt_TargetBuffer_currentBufferPosition, DEC) + ", current " + String(tilt_TargetBuffer_currentPosition, DEC), true);
 					addToTiltBuffer();
 					if(tilt_TargetBuffer_currentBufferPosition - tilt_TargetBuffer_currentPosition < 50){
 						digitalWrite(ledPin, HIGH);
@@ -371,7 +371,7 @@ long getNextAxisPositionFromComputer(int axisID){
 	
 	long tmp = serialReadLong();
 	
-	sendDebugStringToComputer(String(millis() - start, DEC), true);
+	//sendDebugStringToComputer(String(millis() - start, DEC), true);
 	sendDebugStringToComputer("Received Position " + String(tmp, DEC), false);
 	
 	return tmp;
