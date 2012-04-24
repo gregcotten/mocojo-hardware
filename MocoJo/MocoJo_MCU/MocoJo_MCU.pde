@@ -137,8 +137,8 @@ boolean firstTime = true;
 
 
 
-int bufferSize = 100;
-long tilt_TargetBuffer[100];
+int bufferSize = MocoProtocolFrameRate*2;
+long tilt_TargetBuffer[MocoProtocolFrameRate*2];
 volatile int tilt_TargetBuffer_AmountFreshData = 0;
 long tilt_TargetBuffer_currentPosition = 0;
 long tilt_TargetBuffer_currentBufferPosition = 0;
@@ -189,9 +189,9 @@ void loop()
 void doDuties(){
 	/*
 	updateTiltPID();
-    updateTiltEncoder();
     updateTiltPWM();
 	*/
+	updateTiltEncoder();
 	updateControllerTiltEncoder();
 
 	if (!isPlayback){
