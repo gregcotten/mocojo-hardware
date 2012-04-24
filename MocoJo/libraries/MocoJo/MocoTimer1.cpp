@@ -35,7 +35,7 @@ unsigned long MocoTimer1::period;
 void (*MocoTimer1::func)();
 
 void MocoTimer1::set(float timeInSeconds, void (*f)()) {
-	period = (unsigned long)((timeInSeconds*80000000)/256) - 1;
+	period = (unsigned long)((timeInSeconds*80000000.0)/256.0) - 1;
 	func = f;
 }
 
