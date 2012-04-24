@@ -236,13 +236,22 @@ void processSingleByteInstruction(byte receivedByte){
 	else if (receivedByte == MocoProtocolRequestAxisResolutionDataInstruction){
 		writeAxisResolutionsToComputer();
 	}
-	
+	else if (receivedByte ==MocoProtocolHostWillDisconnectNotificationInstruction){
+		deinitSlaveMCU();
+	}
 	
 }
 
 void initSlaveMCU()
 {
 	isInitialized = true;
+}
+
+void deinitSlaveMCU()
+{
+	stopPlaybackFromComputer();
+	stopLiveDataStreamToComputer();
+	isInitialized = false;
 }
 
 void startLiveDataStreamToComputer()
@@ -285,8 +294,8 @@ void stopPlaybackFromComputer()
 {
 	isPlayback = false;
 	onFirstFrameOfPlayback = false;
-	//writePlaybackHasCompletedToComputer();
 	MocoTimer1::stop();
+	writePlaybackHasCompletedToComputer();
 	digitalWrite(ledPin, LOW);
 }
 
