@@ -8,6 +8,7 @@
 
 //---------------GENERAL------------------
 const int ledPin = 13; //LED connected to digital pin 13
+const int ledPin2 = 43; //LED connected to digital pin 13
 const String  MocoProtocolJoMCU_ID = "MocoProtocolHandshakeConfirm"; //for later
 //----------------------------------------
 
@@ -118,6 +119,8 @@ void setup()
 	start = micros();
 	pinMode(ledPin, OUTPUT); // visual signal of I/O to chip
 	digitalWrite(ledPin, LOW);
+	pinMode(ledPin2, OUTPUT); // visual signal of I/O to chip
+	digitalWrite(ledPin2, LOW);
 	pinMode(tiltEncoder_clockPin, OUTPUT); // SCK
 	pinMode(tiltEncoder_CSnPin, OUTPUT); // CSn -- has to toggle high and low to signal chip to start data transfer
 	pinMode(tiltEncoder_dataPin, INPUT); // SDA
@@ -245,6 +248,7 @@ void processSingleByteInstruction(byte receivedByte){
 void initSlaveMCU()
 {
 	isInitialized = true;
+	digitalWrite(ledPin2, HIGH);
 }
 
 void deinitSlaveMCU()
@@ -252,6 +256,7 @@ void deinitSlaveMCU()
 	stopPlaybackFromComputer();
 	stopLiveDataStreamToComputer();
 	isInitialized = false;
+	digitalWrite(ledPin2, LOW);
 }
 
 void startLiveDataStreamToComputer()
