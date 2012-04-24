@@ -1,7 +1,11 @@
 #include <plib.h>
+#include <MocoTimer1.h>
 
 #define SYS_FREQ 80000000
 
+long start;
+volatile long counter = 0;
+/*
 void StartTimer1(float timeInSeconds)
 {
 	unsigned long period = (unsigned long)((timeInSeconds*SYS_FREQ)/256) - 1;
@@ -16,34 +20,10 @@ void StopTimer1()
 	CloseTimer1();
 }
 
-
-
-long start;
-volatile long counter = 0;
-
-void setup()
-{
-	Serial.begin(1000000);
-	
-}
-
-
-void loop()
-{
-	if(millis() - start > 1000){
-		Serial.println(counter, DEC);
-		start = millis();
-		counter =0;
-		CloseTimer1();
-	}
-	
-}
-
-
 extern "C"
 {
 	
-	void __ISR(_TIMER_1_VECTOR,ipl1) pwmOn(void)
+	void __ISR(_TIMER_1_VECTOR,ipl1) timer1Alarm(void)
 	{
 		counter++;
 		mT1ClearIntFlag(); // Clear interrupt flag
@@ -51,4 +31,33 @@ extern "C"
 	
 	
 }
+
+*/
+
+void setup()
+{
+	Serial.begin(1000000);
+	MocoTimer1::set(.02, increment);
+	MocoTimer1::start();
+	start = millis();
+}
+
+void loop()
+{
+	if(millis() - start > 1000){
+		Serial.println(counter, DEC);
+		start = millis();
+		counter =0;
+	}
+	
+}
+
+
+void increment()
+{
+	counter++;
+}
+
+
+
 
