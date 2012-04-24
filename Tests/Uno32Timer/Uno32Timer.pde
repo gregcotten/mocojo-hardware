@@ -37,7 +37,7 @@ extern "C"
 void setup()
 {
 	Serial.begin(1000000);
-	MocoTimer1::set(.02, increment);
+	MocoTimer1::set(.1, increment);
 	MocoTimer1::start();
 	start = millis();
 }
