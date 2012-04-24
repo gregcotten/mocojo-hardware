@@ -281,12 +281,13 @@ void startPlaybackFromComputer()
 	
 	while(isPlayback){
 		if (tilt_TargetBuffer_AmountFreshData < bufferSize-1 && tilt_TargetBuffer_currentBufferPosition%bufferSize != tilt_TargetBuffer_currentPosition%bufferSize){
-			if(tilt_TargetBuffer_AmountFreshData < bufferLowSizeWarning){
-				digitalWrite(ledPin, HIGH);
-			}
+			
 			sendDebugStringToComputer("buffer " + String(tilt_TargetBuffer_currentBufferPosition, DEC) + ", current " + String(tilt_TargetBuffer_currentPosition, DEC), false);
 			addToTiltBuffer();
 			
+		}
+		if(tilt_TargetBuffer_AmountFreshData < bufferLowSizeWarning){
+			digitalWrite(ledPin, HIGH);
 		}
 		doDuties();
 	}
