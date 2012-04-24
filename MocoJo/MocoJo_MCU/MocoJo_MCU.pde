@@ -164,6 +164,27 @@ void loop()
 			
 		}
 	}
+	else {
+		if (timingDebug) {
+		    if (micros() - start > 1800) {
+		    Serial.println(loopCount);
+		    start = micros();
+		    loopCount = 0;
+		    }
+		    loopCount++;
+		  }
+
+	    if (servoTerminalDebug) {
+	      Serial.print("Target ");
+	      Serial.print(tilt_Target);
+	      Serial.print(" Current ");
+	      Serial.print(tiltEncoder_Position);
+	      Serial.print(" Delta ");
+	      Serial.print(tilt_Target-tiltEncoder_Position);
+	      Serial.print(" PWM ");
+	      Serial.println(tilt_MotorSpeed);
+	    }
+	}
 	
 	updateTiltPID();
     updateTiltEncoder();
@@ -179,25 +200,7 @@ void loop()
 		tilt_Target = controllerTiltEncoder_Position - tilt_TargetOffset;
 	}
 	
-	if (timingDebug) {
-	    if (micros() - start > 1800) {
-	    Serial.println(loopCount);
-	    start = micros();
-	    loopCount = 0;
-	    }
-	    loopCount++;
-	  }
-    
-    if (servoTerminalDebug) {
-      Serial.print("Target ");
-      Serial.print(tilt_Target);
-      Serial.print(" Current ");
-      Serial.print(tiltEncoder_Position);
-      Serial.print(" Delta ");
-      Serial.print(tilt_Target-tiltEncoder_Position);
-      Serial.print(" PWM ");
-      Serial.println(tilt_MotorSpeed);
-    }
+	
     
 }
 
