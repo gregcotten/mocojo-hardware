@@ -1,4 +1,3 @@
-#include <digitalWrite.h>
 #include <Servo.h>
 #include <MocoTimer1.h>
 #include <MocoProtocolConstants.h>
@@ -18,7 +17,6 @@ boolean isInitialized = false;
 boolean isStreaming = false;
 boolean isPlayback = false;
 boolean firstLoop = true;
-const int framesPerSecond = 50;
 long frameCounter = 1;
 
 boolean messageDebug = true;
@@ -114,25 +112,23 @@ int longdelay = 1; // this is the milliseconds between readings
 
 void setup()
 {
-	//Serial.begin(230400);
-  Serial.begin(MocoProtocolBaudRate);
-Serial.flush();
-  tiltServo.attach(tiltServo_PwmPin);
-  start = micros();
-  pinMode(ledPin, OUTPUT); // visual signal of I/O to chip
-  digitalWrite(ledPin, LOW);
-  pinMode(tiltEncoder_clockPin, OUTPUT); // SCK
-  pinMode(tiltEncoder_CSnPin, OUTPUT); // CSn -- has to toggle high and low to signal chip to start data transfer
-  pinMode(tiltEncoder_dataPin, INPUT); // SDA
-
+	Serial.begin(MocoProtocolBaudRate);
+	Serial.flush();
+	tiltServo.attach(tiltServo_PwmPin);
+	start = micros();
+	pinMode(ledPin, OUTPUT); // visual signal of I/O to chip
+	digitalWrite(ledPin, LOW);
+	pinMode(tiltEncoder_clockPin, OUTPUT); // SCK
+	pinMode(tiltEncoder_CSnPin, OUTPUT); // CSn -- has to toggle high and low to signal chip to start data transfer
+	pinMode(tiltEncoder_dataPin, INPUT); // SDA
 	pinMode(controllerTiltEncoder_clockPin, OUTPUT); // SCK
-	  pinMode(controllerTiltEncoder_CSnPin, OUTPUT); // CSn -- has to toggle high and low to signal chip to start data transfer
-	  pinMode(controllerTiltEncoder_inputPin, INPUT); // SDA
-  
-  //temp stuff
-  tilt_Target = 0;
-isInitialized = false;
-//delay(2000);
+	pinMode(controllerTiltEncoder_CSnPin, OUTPUT); // CSn -- has to toggle high and low to signal chip to start data transfer
+	pinMode(controllerTiltEncoder_inputPin, INPUT); // SDA
+
+	//temp stuff
+	tilt_Target = 0;
+	isInitialized = false;
+
 }
 
 boolean needsFreshData = false;
@@ -148,31 +144,25 @@ long tilt_TargetBuffer_currentBufferPosition = 0;
 void loop()
 {
 	if (isSlave){
-		
-		if(!isInitialized){
+		if(isInitialized){
+			if(isPlayback){
+				//monitor buffer
+				if(tilt_TargetBuffer_AmountFreshData < 40 && tilt_TargetBuffer_currentBufferPosition%50 < tilt_TargetBuffer_currentPosition%50){
+					addToTiltBuffer();
+				}
+			}
+			if(!isPlayback && Serial.available()){
+				processSingleByteInstruction(Serial.read());
+			}
+		}
+		else {
 			if(Serial.read() == MocoProtocolRequestHandshakeInstruction)
 			{
 				initSlaveMCU();
 				writeHandshakeSuccessToComputer();
 			}
-		}
-		else {
-			if(!isPlayback && Serial.available()){
-				processSingleByteInstruction(Serial.read());
-			}
-		
-		if(isPlayback){
-			if(tilt_TargetBuffer_AmountFreshData < 40 && tilt_TargetBuffer_currentBufferPosition%50 < tilt_TargetBuffer_currentPosition%50){
-				addToTiltBuffer();
-				
-			}
 			
 		}
-		
-		}
-		
-		
-		
 	}
 	
 	updateTiltPID();
