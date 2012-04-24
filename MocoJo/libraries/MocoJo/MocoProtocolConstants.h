@@ -6,7 +6,8 @@ enum {
     
     // Basics
     MocoProtocolBaudRate = 1000000,
-    MocoProtocolFrameRate = 50,
+    MocoProtocolPortOpenedWaitTime = 6,
+	MocoProtocolFrameRate = 50,
     
     // Handshake
     MocoProtocolRequestHandshakeInstruction = 6,
@@ -43,7 +44,9 @@ typedef enum {
     MocoProtocolAxisPositionResponseType     =  1,
     MocoProtocolAxisResolutionResponseType   =  2,
 	MocoProtocolAdvancePlaybackRequestType   =  3,
-	MocoProtocolNewlineDelimitedDebugStringResponseType = 4
+	MocoProtocolNewlineDelimitedDebugStringResponseType = 4,
+    MocoProtocolPlaybackStartingNotificationResponseType   =  5,
+	MocoProtocolPlaybackCompleteNotificationResponseType   =  6
 } MocoProtocolResponseType;
 
 // Responses
