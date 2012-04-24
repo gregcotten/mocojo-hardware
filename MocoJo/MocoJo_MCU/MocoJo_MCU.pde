@@ -287,7 +287,7 @@ void startPlaybackFromComputer()
 			if(tilt_TargetBuffer_currentBufferPosition - tilt_TargetBuffer_currentPosition < 10){
 				digitalWrite(ledPin, HIGH);
 			}
-			sendDebugStringToComputer("buffer " + String(tilt_TargetBuffer_currentBufferPosition, DEC) + ", current " + String(tilt_TargetBuffer_currentPosition, DEC), true);
+			sendDebugStringToComputer("buffer " + String(tilt_TargetBuffer_currentBufferPosition, DEC) + ", current " + String(tilt_TargetBuffer_currentPosition, DEC), false);
 			addToTiltBuffer();
 			
 		}
@@ -370,7 +370,7 @@ long getNextAxisPositionFromComputer(int axisID){
 	
 	long tmp = serialReadLong();
 	
-	//sendDebugStringToComputer(String(millis() - start, DEC), true);
+	sendDebugStringToComputer(String(millis() - start, DEC), true);
 	sendDebugStringToComputer("Received Position " + String(tmp, DEC), false);
 	
 	return tmp;
