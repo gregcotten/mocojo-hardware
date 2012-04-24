@@ -210,13 +210,12 @@ void processSingleByteInstruction(byte receivedByte){
 	}
 	else if (receivedByte == MocoProtocolStopSendingAxisDataInstruction){
 		stopLiveDataStreamToComputer();
-		Serial.flush();
+
 	}
 	else if (receivedByte == MocoProtocolStartPlaybackInstruction){
 		if (isStreaming){
 			stopLiveDataStreamToComputer();
 		}
-		Serial.flush();
 		startPlaybackFromComputer();
 	}
 	else if (receivedByte == MocoProtocolStopPlaybackInstruction){
