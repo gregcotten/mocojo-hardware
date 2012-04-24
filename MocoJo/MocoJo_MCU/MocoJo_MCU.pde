@@ -1,7 +1,8 @@
-#include <digitalWriteFast.h>
+#include <digitalWrite.h>
 #include <Servo.h>
-#include <MsTimer2.h>
+#include <MocoTimer1.h>
 #include <MocoProtocolConstants.h>
+
 //#include <MocoProtocolJoAxis.h>
 
 //DECLARATIONS
@@ -109,6 +110,8 @@ int longdelay = 1; // this is the milliseconds between readings
 
 
 
+
+
 void setup()
 {
 	//Serial.begin(230400);
@@ -116,15 +119,15 @@ void setup()
 Serial.flush();
   tiltServo.attach(tiltServo_PwmPin);
   start = micros();
-  pinModeFast(ledPin, OUTPUT); // visual signal of I/O to chip
-  digitalWriteFast(ledPin, LOW);
-  pinModeFast(tiltEncoder_clockPin, OUTPUT); // SCK
-  pinModeFast(tiltEncoder_CSnPin, OUTPUT); // CSn -- has to toggle high and low to signal chip to start data transfer
-  pinModeFast(tiltEncoder_dataPin, INPUT); // SDA
+  pinMode(ledPin, OUTPUT); // visual signal of I/O to chip
+  digitalWrite(ledPin, LOW);
+  pinMode(tiltEncoder_clockPin, OUTPUT); // SCK
+  pinMode(tiltEncoder_CSnPin, OUTPUT); // CSn -- has to toggle high and low to signal chip to start data transfer
+  pinMode(tiltEncoder_dataPin, INPUT); // SDA
 
-	pinModeFast(controllerTiltEncoder_clockPin, OUTPUT); // SCK
-	  pinModeFast(controllerTiltEncoder_CSnPin, OUTPUT); // CSn -- has to toggle high and low to signal chip to start data transfer
-	  pinModeFast(controllerTiltEncoder_inputPin, INPUT); // SDA
+	pinMode(controllerTiltEncoder_clockPin, OUTPUT); // SCK
+	  pinMode(controllerTiltEncoder_CSnPin, OUTPUT); // CSn -- has to toggle high and low to signal chip to start data transfer
+	  pinMode(controllerTiltEncoder_inputPin, INPUT); // SDA
   
   //temp stuff
   tilt_Target = 0;
@@ -241,14 +244,14 @@ void initSlaveMCU()
 void startLiveDataStreamToComputer()
 {
 	isStreaming = true;
-	MsTimer2::set(1000/MocoProtocolFrameRate, writeAxisPositionsToComputer);
-	MsTimer2::start();
+	MocoTimer1::set(1.0/(float)MocoProtocolFrameRate, writeAxisPositionsToComputer);
+	MocoTimer1::start();
 }
 
 void stopLiveDataStreamToComputer()
 {
 	isStreaming = false;
-	MsTimer2::stop();
+	MocoTimer1::stop();
 }
 
 void startPlaybackFromComputer()
@@ -269,16 +272,16 @@ void startPlaybackFromComputer()
 	sendDebugStringToComputer("Buffer Filled");
 	
 	//needs to seek to first position
-	MsTimer2::set(1000/MocoProtocolFrameRate, updateAxisPositionsFromPlayback);
-	MsTimer2::start();
+	MocoTimer1::set(1.0/(float)MocoProtocolFrameRate, updateAxisPositionsFromPlayback);
+	MocoTimer1::start();
 }
 
 void stopPlaybackFromComputer()
 {
 	needsFreshData = false;
 	isPlayback = false;
-	MsTimer2::stop();
-	digitalWriteFast(ledPin, LOW);
+	MocoTimer1::stop();
+	digitalWrite(ledPin, LOW);
 }
 
 
@@ -300,7 +303,7 @@ void updateAxisPositionsFromPlayback()
 	//3. distribute position data to servos
 	
 	if(tilt_TargetBuffer_currentBufferPosition == tilt_TargetBuffer_currentPosition){
-		digitalWriteFast(ledPin, HIGH);
+		digitalWrite(ledPin, HIGH);
 	}
 	
 	tilt_Target = tilt_TargetBuffer[tilt_TargetBuffer_currentPosition%50]; //effectively a virtual sync
@@ -453,26 +456,26 @@ void updateTiltEncoder(){
   // CSn needs to cycle from high to low to initiate transfer. Then clock cycles. As it goes high
 // again, data will appear on sda
   
-  digitalWriteFast(tiltEncoder_CSnPin, HIGH); // CSn high
-  digitalWriteFast(tiltEncoder_clockPin, HIGH); // CLK high
+  digitalWrite(tiltEncoder_CSnPin, HIGH); // CSn high
+  digitalWrite(tiltEncoder_clockPin, HIGH); // CLK high
   delayMicroseconds(shortdelay);
-  //digitalWriteFast(ledPin, HIGH); // signal start of transfer with LED
-  digitalWriteFast(tiltEncoder_CSnPin, LOW); // CSn low: start of transfer
+  //digitalWrite(ledPin, HIGH); // signal start of transfer with LED
+  digitalWrite(tiltEncoder_CSnPin, LOW); // CSn low: start of transfer
   delayMicroseconds(shortdelay); // delay for chip initialization
-  digitalWriteFast(tiltEncoder_clockPin, LOW); // CLK goes low: start clocking
+  digitalWrite(tiltEncoder_clockPin, LOW); // CLK goes low: start clocking
   delayMicroseconds(shortdelay*2); // hold low
  
   for (int x=0; x <18; x++) // clock signal, 18 transitions, output to clock pin
   {
-    digitalWriteFast(tiltEncoder_clockPin, HIGH); //clock goes high
+    digitalWrite(tiltEncoder_clockPin, HIGH); //clock goes high
     delayMicroseconds(shortdelay);
-    inputstream =digitalReadFast(tiltEncoder_dataPin); // read one bit of data from pin
+    inputstream =digitalRead(tiltEncoder_dataPin); // read one bit of data from pin
     packeddata = ((packeddata << 1) + inputstream);// left-shift summing variable, add pin value
-    digitalWriteFast(tiltEncoder_clockPin, LOW);
+    digitalWrite(tiltEncoder_clockPin, LOW);
     delayMicroseconds(shortdelay); // end of one clock cycle
   }
 
-  //digitalWriteFast(ledPin, LOW); // signal end of transmission
+  //digitalWrite(ledPin, LOW); // signal end of transmission
   
   tiltEncoder_AbsolutePosition = (packeddata & absPositionMask) >> 6; // mask rightmost 6 digits of packeddata to zero, into angle.
 
@@ -521,26 +524,26 @@ void updateControllerTiltEncoder(){
   // CSn needs to cycle from high to low to initiate transfer. Then clock cycles. As it goes high
 // again, data will appear on sda
   
-  digitalWriteFast(controllerTiltEncoder_CSnPin, HIGH); // CSn high
-  digitalWriteFast(controllerTiltEncoder_clockPin, HIGH); // CLK high
+  digitalWrite(controllerTiltEncoder_CSnPin, HIGH); // CSn high
+  digitalWrite(controllerTiltEncoder_clockPin, HIGH); // CLK high
   delayMicroseconds(shortdelay);
-  //digitalWriteFast(ledPin, HIGH); // signal start of transfer with LED
-  digitalWriteFast(controllerTiltEncoder_CSnPin, LOW); // CSn low: start of transfer
+  //digitalWrite(ledPin, HIGH); // signal start of transfer with LED
+  digitalWrite(controllerTiltEncoder_CSnPin, LOW); // CSn low: start of transfer
   delayMicroseconds(shortdelay); // delay for chip initialization
-  digitalWriteFast(controllerTiltEncoder_clockPin, LOW); // CLK goes low: start clocking
+  digitalWrite(controllerTiltEncoder_clockPin, LOW); // CLK goes low: start clocking
   delayMicroseconds(shortdelay*2); // hold low
  
   for (int x=0; x <18; x++) // clock signal, 18 transitions, output to clock pin
   {
-    digitalWriteFast(controllerTiltEncoder_clockPin, HIGH); //clock goes high
+    digitalWrite(controllerTiltEncoder_clockPin, HIGH); //clock goes high
     delayMicroseconds(shortdelay);
-    inputstream_2 =digitalReadFast(controllerTiltEncoder_inputPin); // read one bit of data from pin
+    inputstream_2 =digitalRead(controllerTiltEncoder_inputPin); // read one bit of data from pin
     packeddata_2 = ((packeddata_2 << 1) + inputstream_2);// left-shift summing variable, add pin value
-    digitalWriteFast(controllerTiltEncoder_clockPin, LOW);
+    digitalWrite(controllerTiltEncoder_clockPin, LOW);
     delayMicroseconds(shortdelay); // end of one clock cycle
   }
 
-  //digitalWriteFast(ledPin, LOW); // signal end of transmission
+  //digitalWrite(ledPin, LOW); // signal end of transmission
   
   controllerTiltEncoder_AbsolutePosition = packeddata_2 & absPositionMask; // mask rightmost 6 digits of packeddata to zero, into angle.
 
@@ -586,5 +589,6 @@ void updateControllerTiltEncoder(){
   
   packeddata_2 = 0; // reset both variables to zero so they don't just accumulate
 }
+
 
 
