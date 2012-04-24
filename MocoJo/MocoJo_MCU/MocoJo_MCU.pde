@@ -2,14 +2,11 @@
 #include <MocoTimer1.h>
 #include <MocoProtocolConstants.h>
 
-//#include <MocoProtocolJoAxis.h>
-
 //DECLARATIONS
 
 //---------------GENERAL------------------
 const int ledPin = 13; //LED connected to digital pin 13
 const int ledPin2 = 43; //LED connected to digital pin 13
-const String  MocoProtocolJoMCU_ID = "MocoProtocolHandshakeConfirm"; //for later
 //----------------------------------------
 
 //MCU stuff
