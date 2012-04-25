@@ -271,13 +271,13 @@ void stopLiveDataStreamToComputer()
 void startPlaybackFromComputer()
 {
 	isPlayback = true;
-	frameCounter = 1;
+	frameCounter = 0;
 	finalFrame = -1;
 	tilt_TargetBuffer_AmountFreshData = 0;
 	tilt_TargetBuffer_currentPosition = 0;
 	tilt_TargetBuffer_currentBufferPosition = 0;
 	sendDebugStringToComputer("Filling Buffer", true);
-	while(tilt_TargetBuffer_AmountFreshData<bufferSize && isPlayback){
+	while(tilt_TargetBuffer_AmountFreshData<bufferSize && isPlayback && finalFrame == -1){
 		addToTiltBuffer();
 	}
 	if(!isPlayback){
@@ -317,38 +317,11 @@ void stopPlaybackFromComputer()
 void addToTiltBuffer()
 {
 	tilt_TargetBuffer[tilt_TargetBuffer_currentBufferPosition%bufferSize] = getNextAxisPositionFromComputer(MocoAxisCameraTilt);
-	tilt_TargetBuffer_AmountFreshData++;
-	tilt_TargetBuffer_currentBufferPosition++;
-}
-
-
-void updateAxisPositionsFromPlayback()
-{
-	//EVENTUALLY WHEN WE GET ALL THE MCUs
-	//1. pulse logic high to all axis servos to notify servos to change to newly received position
-	// ALSO maybe get current position data from all these servos 
-	//2. request next playback frame -> receive position data
-	//3. distribute position data to servos
-	if(frameCounter == finalFrame){
-		stopPlaybackFromComputer();
-		return;
+	if(finalFrame != -1){
+		tilt_TargetBuffer_AmountFreshData++;
+		tilt_TargetBuffer_currentBufferPosition++;
 	}
 	
-	if(tilt_TargetBuffer_currentPosition > tilt_TargetBuffer_currentBufferPosition){
-		//digitalWrite(ledPin, HIGH);
-		//sendDebugStringToComputer("Oh Fuck", true);
-	}
-	
-	if(frameCounter == 1){
-		writePlaybackHasStartedToComputer();
-	}
-	
-	tilt_Target = tilt_TargetBuffer[tilt_TargetBuffer_currentPosition%bufferSize]; //effectively a virtual sync
-	tilt_TargetBuffer_currentPosition++;
-	tilt_TargetBuffer_AmountFreshData--;
-	
-	frameCounter++;
-
 }
 
 void writeRequestForNextAxisPositionToComputer(int axisID)
@@ -365,10 +338,8 @@ long getNextAxisPositionFromComputer(int axisID){
 	while(Serial.available() < 1){}
 	byte instructionByte = Serial.read();
 	while(instructionByte != MocoProtocolPlaybackFrameDataHeader){
-		sendDebugStringToComputer("Didn't send the correct instruction - you sent " + String(instructionByte, DEC), false);
 		processSingleByteInstruction(instructionByte);
-		if(!isPlayback){
-			sendDebugStringToComputer("You stopped me!!!!", true);
+		if(!isPlayback || finalFrame != -1){
 			return 0;
 		}
 		while(Serial.available() < 1){}
@@ -383,12 +354,45 @@ long getNextAxisPositionFromComputer(int axisID){
 	
 	long tmp = serialReadLong();
 	
-	sendDebugStringToComputer(String(millis() - start, DEC), true);
+//	sendDebugStringToComputer(String(millis() - start, DEC), true);
 	sendDebugStringToComputer("Received Position " + String(tmp, DEC), false);
 	
 	return tmp;
 	
 }
+
+
+void updateAxisPositionsFromPlayback()
+{
+	//EVENTUALLY WHEN WE GET ALL THE MCUs
+	//1. pulse logic high to all axis servos to notify servos to change to newly received position
+	// ALSO maybe get current position data from all these servos 
+	//2. request next playback frame -> receive position data
+	//3. distribute position data to servos
+	if(frameCounter != 0 && frameCounter == finalFrame+1){
+		stopPlaybackFromComputer();
+		return;
+	}
+	
+	if(tilt_TargetBuffer_currentPosition > tilt_TargetBuffer_currentBufferPosition){
+		//digitalWrite(ledPin, HIGH);
+		sendDebugStringToComputer("I used a stale frame at: " + String(frameCounter, DEC), true);
+	}
+	sendDebugStringToComputer(String(frameCounter, DEC), true);
+	
+	if(frameCounter == 1){
+		writePlaybackHasStartedToComputer();
+	}
+	
+	tilt_Target = tilt_TargetBuffer[tilt_TargetBuffer_currentPosition%bufferSize]; //effectively a virtual sync
+	tilt_TargetBuffer_currentPosition++;
+	tilt_TargetBuffer_AmountFreshData--;
+	
+	frameCounter++;
+
+}
+
+
 
 void writePlaybackHasStartedToComputer()
 {
