@@ -2,6 +2,8 @@
 #include <MocoTimer1.h>
 #include <MocoProtocolConstants.h>
 
+#define FRAMERATE 50
+
 //DECLARATIONS
 
 //---------------GENERAL------------------
@@ -21,6 +23,20 @@ boolean messageDebug = false;
 boolean messageDebugHighPriority = true;
 
 long tilt_nextTarget = 0; //temp
+
+
+boolean needsFreshData = false;
+boolean sentRequestsForFreshData = false;
+boolean firstTime = true;
+
+int bufferSize = FRAMERATE*2; //2 second buffer
+int bufferLowSizeWarning = FRAMERATE/2; 
+long tilt_TargetBuffer[FRAMERATE*2];
+volatile int tilt_TargetBuffer_AmountFreshData = 0;
+long tilt_TargetBuffer_currentPosition = 0;
+long tilt_TargetBuffer_currentBufferPosition = 0;
+
+long finalFrame = -1;
 
 //---------------DEBUG--------------------
 //1 turns the debug on, 0 turns the debug off
@@ -131,20 +147,7 @@ void setup()
 
 }
 
-boolean needsFreshData = false;
-boolean sentRequestsForFreshData = false;
-boolean firstTime = true;
 
-
-
-int bufferSize = MocoProtocolFrameRate*2;
-int bufferLowSizeWarning = MocoProtocolFrameRate/2;
-long tilt_TargetBuffer[MocoProtocolFrameRate*2];
-volatile int tilt_TargetBuffer_AmountFreshData = 0;
-long tilt_TargetBuffer_currentPosition = 0;
-long tilt_TargetBuffer_currentBufferPosition = 0;
-
-long finalFrame = -1;
 
 
 void loop()
@@ -233,7 +236,7 @@ void processSingleByteInstruction(byte receivedByte){
 		finalFrame = tilt_TargetBuffer_currentBufferPosition-1;
 	}
 	else{
-		sendDebugStringToComputer("Unknown Message Received: " + String(receivedByte, DEC));
+		sendDebugStringToComputer("Unknown Message Received: " + String(receivedByte, DEC), true);
 	}
 	
 }
