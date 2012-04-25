@@ -144,6 +144,7 @@ volatile int tilt_TargetBuffer_AmountFreshData = 0;
 long tilt_TargetBuffer_currentPosition = 0;
 long tilt_TargetBuffer_currentBufferPosition = 0;
 
+long finalFrame = -1;
 
 
 void loop()
@@ -228,6 +229,12 @@ void processSingleByteInstruction(byte receivedByte){
 	else if (receivedByte ==MocoProtocolHostWillDisconnectNotificationInstruction){
 		deinitSlaveMCU();
 	}
+	else if (receivedByte == MocoProtocolPlaybackLastFrameSentNotificationInstruction){
+		finalFrame = tilt_TargetBuffer_currentBufferPosition-1;
+	}
+	else{
+		sendDebugStringToComputer("Unknown Message Received: " + String(receivedByte, DEC));
+	}
 	
 }
 
@@ -248,7 +255,7 @@ void deinitSlaveMCU()
 void startLiveDataStreamToComputer()
 {
 	isStreaming = true;
-	MocoTimer1::set(1.0/(float)MocoProtocolFrameRate, writeAxisPositionsToComputer);
+	MocoTimer1::set(1.0/50.0, writeAxisPositionsToComputer);
 	MocoTimer1::start();
 }
 
@@ -262,6 +269,7 @@ void startPlaybackFromComputer()
 {
 	isPlayback = true;
 	frameCounter = 1;
+	finalFrame = -1;
 	tilt_TargetBuffer_AmountFreshData = 0;
 	tilt_TargetBuffer_currentPosition = 0;
 	tilt_TargetBuffer_currentBufferPosition = 0;
@@ -276,7 +284,7 @@ void startPlaybackFromComputer()
 	sendDebugStringToComputer("Buffer Filled", true);
 	
 	//needs to seek to first position
-	MocoTimer1::set(1.0/(float)MocoProtocolFrameRate, updateAxisPositionsFromPlayback);
+	MocoTimer1::set(1.0/50.0, updateAxisPositionsFromPlayback);
 	MocoTimer1::start();
 	
 	while(isPlayback){
@@ -318,10 +326,14 @@ void updateAxisPositionsFromPlayback()
 	// ALSO maybe get current position data from all these servos 
 	//2. request next playback frame -> receive position data
 	//3. distribute position data to servos
+	if(frameCounter == finalFrame){
+		stopPlaybackFromComputer();
+		return;
+	}
 	
 	if(tilt_TargetBuffer_currentPosition > tilt_TargetBuffer_currentBufferPosition){
 		//digitalWrite(ledPin, HIGH);
-		sendDebugStringToComputer("Oh Fuck", true);
+		//sendDebugStringToComputer("Oh Fuck", true);
 	}
 	
 	if(frameCounter == 1){
