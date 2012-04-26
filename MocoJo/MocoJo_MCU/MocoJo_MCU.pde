@@ -11,33 +11,6 @@ const int ledPin = 13; //LED connected to digital pin 13
 const int ledPin2 = 43; //LED connected to digital pin 13
 //----------------------------------------
 
-//MCU stuff
-const boolean isSlave = true;
-boolean isInitialized = false;
-boolean isStreaming = false;
-boolean isPlayback = false;
-boolean firstLoop = true;
-long frameCounter = 1;
-
-boolean messageDebug = false;
-boolean messageDebugHighPriority = true;
-
-long tilt_nextTarget = 0; //temp
-
-
-boolean needsFreshData = false;
-boolean sentRequestsForFreshData = false;
-boolean firstTime = true;
-
-int bufferSize = FRAMERATE*2; //2 second buffer
-int bufferLowSizeWarning = FRAMERATE/2; 
-long tilt_TargetBuffer[FRAMERATE*2];
-volatile int tilt_TargetBuffer_AmountFreshData = 0;
-long tilt_TargetBuffer_currentPosition = 0;
-long tilt_TargetBuffer_currentBufferPosition = 0;
-
-long finalFrame = -1;
-
 //---------------DEBUG--------------------
 //1 turns the debug on, 0 turns the debug off
 const int servoTerminalDebug = 0; //show PID stuff
@@ -48,9 +21,44 @@ const int timingDebug = 0; //for debugging control loop frequency
 
 long start = 0; //for timing debug
 long loopCount = 0; //for timing debug
+
+boolean messageDebug = false;
+boolean messageDebugHighPriority = true;
 //----------------------------------------
 
-long tilt_TargetOffset;
+
+//---------------MCU LOGIC--------------------
+boolean firstBoot = true;
+const boolean isSlave = true;
+boolean isInitialized = false;
+boolean isStreaming = false;
+boolean isPlayback = false;
+
+//PLAYBACK
+long finalFrame;
+long frameCounter;
+boolean freshRequestSentForNextAxisPositionToComputer;
+//----------------------------------------------
+
+
+//---------------AXIS DATA--------------------
+//TODO: Write MocoAxis class
+long axis_Position = 0;
+long axis_Resolution = 8*4095;
+long axis_Target = 0;
+long axis_TargetOffset;
+
+int bufferSize = FRAMERATE*2; //2 second buffer
+int bufferLowSizeWarning = FRAMERATE/2; 
+long axis_TargetBuffer[FRAMERATE*2];
+volatile int axis_TargetBuffer_AmountFreshData = 0;
+long axis_TargetBuffer_currentPosition = 0;
+long axis_TargetBuffer_currentBufferPosition = 0;
+//-------------------------------------------
+
+
+
+//---------------WHEELS--------------------
 long controllerTiltEncoder_Position = 0;
 long controllerTiltEncoder_RevolutionCount = 0;
 long controllerTiltEncoder_AbsolutePosition = 0;
@@ -60,47 +68,7 @@ long packeddata_2 = 0; //two bytes concatenated from inputstream
 const int controllerTiltEncoder_CSnPin = 5; //output to chip select
 const int controllerTiltEncoder_clockPin = 6; //output to clock
 const int controllerTiltEncoder_inputPin = 7; //read AS5045
-
-
-
-
-//----------------TILT SERVO---------------------
-
-//****GENERAL****
-Servo tiltServo; //tilt servo
-const int tiltServo_PwmPin = 11;
-
-const long tilt_MotorSpeedCenter = 1500;
-long tilt_MotorSpeed = 1500;
-long tiltEncoder_Position = 0;
-long tiltEncoder_Resolution = 4095*8;
-long tiltEncoder_RevolutionCount = 0;
-long tiltEncoder_AbsolutePosition = 0;
-long tiltEncoder_PreviousAbsolutePosition = 2047; //middle point so a rev is not counted at start
-
-//
-
-//****ENCODER****
-const int tiltEncoder_CSnPin = 2; //output to chip select
-const int tiltEncoder_dataPin = 4; //read AS5045
-const int tiltEncoder_clockPin = 3; //output to clock
-
-//****PID****
-long tilt_Target;
-
-//correction = Kp * error + Kd * (error - prevError) + kI * (sum of errors)
-//PID controller constants
-float tilt_KP = 1.8; //position multiplier (gain)
-float tilt_KI = 0; // Intergral multiplier (gain)
-float tilt_KD = 0; // derivative multiplier (gain)
-//track the previous error for the derivitive term, and the sum of the errors for the integral term
-int tilt_lastError = 0;
-int tilt_sumError = 0;
-//Integral term min/max (random value and not yet tested/verified)
-int tilt_iMax = 500;
-int tilt_iMin = 0;
-//-------------------------------------------------
-
+//-------------------------------------------
 
 
 
@@ -121,41 +89,56 @@ int longdelay = 1; // this is the milliseconds between readings
 //----------------------------------------------
 
 
-
-
-
 void setup()
 {
 	Serial.begin(MocoProtocolBaudRate);
 	Serial.flush();
-	tiltServo.attach(tiltServo_PwmPin);
-	start = micros();
 	pinMode(ledPin, OUTPUT); // visual signal of I/O to chip
 	digitalWrite(ledPin, LOW);
 	pinMode(ledPin2, OUTPUT); // visual signal of I/O to chip
 	digitalWrite(ledPin2, LOW);
-	pinMode(tiltEncoder_clockPin, OUTPUT); // SCK
-	pinMode(tiltEncoder_CSnPin, OUTPUT); // CSn -- has to toggle high and low to signal chip to start data transfer
-	pinMode(tiltEncoder_dataPin, INPUT); // SDA
+	
 	pinMode(controllerTiltEncoder_clockPin, OUTPUT); // SCK
 	pinMode(controllerTiltEncoder_CSnPin, OUTPUT); // CSn -- has to toggle high and low to signal chip to start data transfer
 	pinMode(controllerTiltEncoder_inputPin, INPUT); // SDA
 
-	//temp stuff
-	tilt_Target = 0;
-	isInitialized = false;
-
 }
 
-
-
-
 void loop()
+{
+	//make offsets for each axis's controller so that we don't make the servos jump
+	if (firstBoot){
+		axis_TargetOffset = controllerTiltEncoder_Position - axis_Position;
+		firstBoot = false;
+	}
+	
+	doSerialDuties();
+	doGeneralDuties();
+}
+
+/*
+	General duties are anything that needs to happen with some sort of immediacy (updating positions, controllers, etc.).
+*/
+void doGeneralDuties(){
+	
+	//update pan/tilt wheels and any other inputs
+	updateControllerTiltEncoder(); 
+	
+	//refresh positions
+	if (!isPlayback){
+		axis_Target = controllerTiltEncoder_Position - axis_TargetOffset;
+	}
+}
+
+/*
+	All serial communication starts here.
+*/
+void doSerialDuties()
 {
 	if (isSlave){
 		if(isInitialized){
 			if(Serial.available()){
-				processSingleByteInstruction(Serial.read());
+				processInstructionFromComputer(Serial.read());
 			}
 		}
 		else {
@@ -164,95 +147,74 @@ void loop()
 				initSlaveMCU();
 				writeHandshakeSuccessToComputer();
 			}
-			
+
 		}
-	}
-	else {
-		if (timingDebug) {
-		    if (micros() - start > 1800) {
-		    Serial.println(loopCount);
-		    start = micros();
-		    loopCount = 0;
-		    }
-		    loopCount++;
-		  }
-
-	    if (servoTerminalDebug) {
-	      Serial.print("Target ");
-	      Serial.print(tilt_Target);
-	      Serial.print(" Current ");
-	      Serial.print(tiltEncoder_Position);
-	      Serial.print(" Delta ");
-	      Serial.print(tilt_Target-tiltEncoder_Position);
-	      Serial.print(" PWM ");
-	      Serial.println(tilt_MotorSpeed);
-	    }
-	}
-	doDuties();
-}
-
-void doDuties(){
-	/*
-	updateTiltPID();
-    updateTiltPWM();
-	*/
-	updateTiltEncoder();
-	updateControllerTiltEncoder();
-
-	if (!isPlayback){
-		
-		if (firstTime){
-			tilt_TargetOffset = controllerTiltEncoder_Position - tiltEncoder_Position;
-			firstTime = false;
-		}
-		tilt_Target = controllerTiltEncoder_Position - tilt_TargetOffset;
 	}
 }
 
-void processSingleByteInstruction(byte receivedByte){
-	if (receivedByte == MocoProtocolStartSendingAxisDataInstruction){
-		startLiveDataStreamToComputer();
-	}
-	else if (receivedByte == MocoProtocolStopSendingAxisDataInstruction){
-		stopLiveDataStreamToComputer();
-
-	}
-	else if (receivedByte == MocoProtocolStartPlaybackInstruction){
-		if (isStreaming){
-			stopLiveDataStreamToComputer();
-		}
-		startPlaybackFromComputer();
-	}
-	else if (receivedByte == MocoProtocolStopPlaybackInstruction){
-		stopPlaybackFromComputer();
-	}
-	else if (receivedByte == MocoProtocolRequestAxisResolutionDataInstruction){
-		writeAxisResolutionsToComputer();
-	}
-	else if (receivedByte ==MocoProtocolHostWillDisconnectNotificationInstruction){
-		deinitSlaveMCU();
-	}
-	else if (receivedByte == MocoProtocolPlaybackLastFrameSentNotificationInstruction){
-		finalFrame = tilt_TargetBuffer_currentBufferPosition-1;
-	}
-	else{
-		sendDebugStringToComputer("Unknown Message Received: " + String(receivedByte, DEC), true);
-	}
-	
-}
-
+/*
+	Used to initialize any variables associated with the MCU - called when handshake succeeds.
+*/
 void initSlaveMCU()
 {
 	isInitialized = true;
-	digitalWrite(ledPin2, HIGH);
+	digitalWrite(ledPin2, HIGH); //visual indication of initialization
 }
 
+/*
+	Used to deinitialize anything on the MCU - turns it back to a "blank slate".
+*/
 void deinitSlaveMCU()
 {
+	isInitialized = false;
+	
+	//stop everything!!!
 	stopPlaybackFromComputer();
 	stopLiveDataStreamToComputer();
-	isInitialized = false;
-	digitalWrite(ledPin2, LOW);
+	
+	digitalWrite(ledPin2, LOW); //visual indication of deinitialization
+}
+
+/*
+	Processes incoming serial data based on the header instruction.
+*/
+void processInstructionFromComputer(byte instruction){
+	if (instruction == MocoProtocolStartSendingAxisDataInstruction){
+		startLiveDataStreamToComputer();
+	}
+	else if (instruction == MocoProtocolStopSendingAxisDataInstruction){
+		stopLiveDataStreamToComputer();
+
+	}
+	else if (instruction == MocoProtocolStartPlaybackInstruction){
+		if (isStreaming){
+			stopLiveDataStreamToComputer();
+		}
+		doPlaybackFromComputer();
+	}
+	else if (instruction == MocoProtocolStopPlaybackInstruction){
+		stopPlaybackFromComputer();
+	}
+	else if (instruction == MocoProtocolRequestAxisResolutionDataInstruction){
+		writeAxisResolutionsToComputer();
+	}
+	else if (instruction ==MocoProtocolHostWillDisconnectNotificationInstruction){
+		deinitSlaveMCU();
+	}
+	else if (instruction == MocoProtocolPlaybackLastFrameSentNotificationInstruction){
+		finalFrame = axis_TargetBuffer_currentBufferPosition-1;
+	}
+	else if (instruction ==  MocoProtocolPlaybackFrameDataHeader){
+		freshRequestSentForNextAxisPositionToComputer = false;
+		while(Serial.available() < 5){}
+		int axisID = Serial.read();
+		addToAxisTargetBuffer(axisID, readLongFromSerial());
+		writeDebugStringToComputer(String(millis() - start, DEC), true);
+	}
+	else{
+		writeDebugStringToComputer("Unknown Message Received: " + String(instruction, DEC), true);
+	}
+	
 }
 
 void startLiveDataStreamToComputer()
@@ -268,39 +230,59 @@ void stopLiveDataStreamToComputer()
 	MocoTimer1::stop();
 }
 
-void startPlaybackFromComputer()
+void doPlaybackFromComputer()
 {
+	//reset all data
 	isPlayback = true;
-	frameCounter = 1;
+	frameCounter = 0;
 	finalFrame = -1;
-	tilt_TargetBuffer_AmountFreshData = 0;
-	tilt_TargetBuffer_currentPosition = 0;
-	tilt_TargetBuffer_currentBufferPosition = 0;
-	sendDebugStringToComputer("Filling Buffer", true);
-	while(tilt_TargetBuffer_AmountFreshData<bufferSize && isPlayback){
-		addToTiltBuffer();
+	axis_TargetBuffer_AmountFreshData = 0;
+	axis_TargetBuffer_currentPosition = 0;
+	axis_TargetBuffer_currentBufferPosition = 0;
+	//----------------------
+	
+	//TODO: wait to go to first frame????
+	
+	//begin to fill the buffer
+	writeDebugStringToComputer("Filling Buffer", true);
+	
+	//fill buffer until finalFrame is found or we run out of buffer space
+	freshRequestSentForNextAxisPositionToComputer = false;
+	
+	while(axis_TargetBuffer_AmountFreshData<bufferSize && isPlayback && finalFrame == -1){
+		if(!freshRequestSentForNextAxisPositionToComputer){
+			writeRequestForNextAxisPositionToComputer(MocoAxisCameraTilt);
+			freshRequestSentForNextAxisPositionToComputer = true;
+		}
+		
+		doSerialDuties();
+		doGeneralDuties();
 	}
 	if(!isPlayback){
-		sendDebugStringToComputer("Playback quit before buffer could fill.", true);
+		writeDebugStringToComputer("Playback quit before buffer could fill.", true);
 		return;
 	}
-	sendDebugStringToComputer("Buffer Filled", true);
+	writeDebugStringToComputer("Buffer Filled", true);
 	
 	//needs to seek to first position
 	MocoTimer1::set(1.0/50.0, updateAxisPositionsFromPlayback);
 	MocoTimer1::start();
-	
+	writePlaybackHasStartedToComputer();
 	while(isPlayback){
-		if (tilt_TargetBuffer_AmountFreshData < bufferSize-1 && tilt_TargetBuffer_currentBufferPosition%bufferSize != tilt_TargetBuffer_currentPosition%bufferSize){
-			
-			sendDebugStringToComputer("buffer " + String(tilt_TargetBuffer_currentBufferPosition, DEC) + ", current " + String(tilt_TargetBuffer_currentPosition, DEC), false);
-			addToTiltBuffer();
-			
+		if (axis_TargetBuffer_AmountFreshData < bufferSize-1 && axis_TargetBuffer_currentBufferPosition%bufferSize != axis_TargetBuffer_currentPosition%bufferSize){
+			writeDebugStringToComputer("buffer " + String(axis_TargetBuffer_currentBufferPosition, DEC) + ", current " + String(axis_TargetBuffer_currentPosition, DEC), false);
+			if(!freshRequestSentForNextAxisPositionToComputer){
+				writeRequestForNextAxisPositionToComputer(MocoAxisCameraTilt);
+				freshRequestSentForNextAxisPositionToComputer = true;
+				start = millis();
+			}
 		}
-		if(tilt_TargetBuffer_AmountFreshData < bufferLowSizeWarning){
+		if(axis_TargetBuffer_AmountFreshData < bufferLowSizeWarning){
 			digitalWrite(ledPin, HIGH);
 		}
-		doDuties();
+		doSerialDuties();
+		doGeneralDuties();
+		
 	}
 	
 }
@@ -314,11 +296,12 @@ void stopPlaybackFromComputer()
 }
 
 
-void addToTiltBuffer()
+//eventually do (MocoJoAxis axis, long target)
+void addToAxisTargetBuffer(int axisID, long target)
 {
-	tilt_TargetBuffer[tilt_TargetBuffer_currentBufferPosition%bufferSize] = getNextAxisPositionFromComputer(MocoAxisCameraTilt);
-	tilt_TargetBuffer_AmountFreshData++;
-	tilt_TargetBuffer_currentBufferPosition++;
+	axis_TargetBuffer[axis_TargetBuffer_currentBufferPosition%bufferSize] = target;
+	axis_TargetBuffer_AmountFreshData++;
+	axis_TargetBuffer_currentBufferPosition++;
 }
 
 
@@ -329,65 +312,32 @@ void updateAxisPositionsFromPlayback()
 	// ALSO maybe get current position data from all these servos 
 	//2. request next playback frame -> receive position data
 	//3. distribute position data to servos
-	if(frameCounter == finalFrame){
+	if(frameCounter == finalFrame+1 && finalFrame != -1){
 		stopPlaybackFromComputer();
 		return;
 	}
 	
-	if(tilt_TargetBuffer_currentPosition > tilt_TargetBuffer_currentBufferPosition){
+	if(axis_TargetBuffer_currentPosition > axis_TargetBuffer_currentBufferPosition){
 		//digitalWrite(ledPin, HIGH);
-		//sendDebugStringToComputer("Oh Fuck", true);
+		//writeDebugStringToComputer("Oh Fuck", true);
 	}
 	
-	if(frameCounter == 1){
-		writePlaybackHasStartedToComputer();
-	}
+	//writeDebugStringToComputer(String(frameCounter, DEC), true);
 	
-	tilt_Target = tilt_TargetBuffer[tilt_TargetBuffer_currentPosition%bufferSize]; //effectively a virtual sync
-	tilt_TargetBuffer_currentPosition++;
-	tilt_TargetBuffer_AmountFreshData--;
+	axis_Target = axis_TargetBuffer[axis_TargetBuffer_currentPosition%bufferSize]; //effectively a virtual sync
+	axis_TargetBuffer_currentPosition++;
+	axis_TargetBuffer_AmountFreshData--;
 	
 	frameCounter++;
 
 }
 
+
 void writeRequestForNextAxisPositionToComputer(int axisID)
 {
-	//TEMP - eventually will interate through all online axes
-	Serial.write(MocoProtocolAdvancePlaybackRequestType); //request next positions
+	Serial.write(MocoProtocolAdvancePlaybackRequestType); 
 	Serial.write(axisID);
-	serialWriteLong(tiltEncoder_Position);
-}
-
-long getNextAxisPositionFromComputer(int axisID){
-	start =millis();
-	writeRequestForNextAxisPositionToComputer(axisID);
-	while(Serial.available() < 1){}
-	byte instructionByte = Serial.read();
-	while(instructionByte != MocoProtocolPlaybackFrameDataHeader){
-		sendDebugStringToComputer("Didn't send the correct instruction - you sent " + String(instructionByte, DEC), false);
-		processSingleByteInstruction(instructionByte);
-		if(!isPlayback){
-			sendDebugStringToComputer("You stopped me!!!!", true);
-			return 0;
-		}
-		while(Serial.available() < 1){}
-		instructionByte = Serial.read();
-	}
-	
-	while(Serial.available() < 5){}
-	byte axisByte = Serial.read();
-	if(axisByte != axisID){
-		sendDebugStringToComputer("Didn't send the correct axis - you sent " + String(axisByte, DEC), false);
-	}
-	
-	long tmp = serialReadLong();
-	
-	sendDebugStringToComputer(String(millis() - start, DEC), true);
-	sendDebugStringToComputer("Received Position " + String(tmp, DEC), false);
-	
-	return tmp;
-	
+	writeLongToSerial(axis_Position);
 }
 
 void writePlaybackHasStartedToComputer()
@@ -415,7 +365,7 @@ void writeAxisPositionsToComputer()
 	//TEMP - eventually will interate through all online axes
 	Serial.write(MocoProtocolAxisPositionResponseType);//we are sending axis position data
 	Serial.write(MocoAxisCameraTilt);//we are saying this is the tilt
-	serialWriteLong(tiltEncoder_Position);
+	writeLongToSerial(axis_Position);
 
 }
 
@@ -423,10 +373,10 @@ void writeHandshakeSuccessToComputer()
 {
 	Serial.write(MocoProtocolHandshakeResponseType);
 	Serial.write(1);
-	serialWriteLong((long)MocoProtocolHandshakeSuccessfulResponse);
+	writeLongToSerial((long)MocoProtocolHandshakeSuccessfulResponse);
 }
 
-void sendDebugStringToComputer(String str, boolean force)
+void writeDebugStringToComputer(String str, boolean force)
 {
 	if(!messageDebugHighPriority){
 		force = false;
@@ -438,17 +388,16 @@ void sendDebugStringToComputer(String str, boolean force)
 	Serial.println(str);
 }
 
-
 void writeAxisResolutionsToComputer()
 {
 	//TEMP:
 	Serial.write(MocoProtocolAxisResolutionResponseType);
 	Serial.write(MocoAxisCameraTilt);//we are saying this is the tilt
-	serialWriteLong(tiltEncoder_Resolution);
+	writeLongToSerial(axis_Resolution);
 	//-----
 }
 
-void serialWriteLong(long number)
+void writeLongToSerial(long number)
 {
 	Serial.write((uint8_t)((number >> 24) & 0xFF));
 	Serial.write((uint8_t)((number >> 16) & 0xFF));
@@ -456,7 +405,7 @@ void serialWriteLong(long number)
 	Serial.write((uint8_t)((number & 0XFF)));
 }
 
-long serialReadLong()
+long readLongFromSerial()
 {
 	byte byte1 = Serial.read();
 	byte byte2 = Serial.read();
@@ -466,114 +415,6 @@ long serialReadLong()
 	return ((byte1 << 24) + (byte2 << 16) + (byte3 << 8) + (byte4));
 }
 
-
-
-void updateTiltPWM() {
-   tiltServo.writeMicroseconds(tilt_MotorSpeed);
-} 
-
-void updateTiltPID() {
-  long error = tilt_Target - tiltEncoder_Position; // find the error term of current position - tilt_Target
-
-  // generalized PID formula
-  //correction = Kp * error + Kd * (error - prevError) + kI * (sum of errors)
-  long pidResult = tilt_KP * error + tilt_KD * (error - tilt_lastError) +tilt_KI * (tilt_sumError);// calculate a motor speed for the current conditions
-
-  
-  // set the last and sumerrors for next loop iteration
-  tilt_lastError = error;
-  tilt_sumError += error;
-  /*
-  //scale the sum for the integral term
-  if(tilt_sumError > tilt_iMax){
-    tilt_sumError = tilt_iMax;
-  }
-  else if(tilt_sumError < tilt_iMin){
-    tilt_sumError = tilt_iMin;
-  }
-  */
-  if (pidResult < 0){
-	tilt_MotorSpeed = tilt_MotorSpeedCenter - 15 - map(abs(pidResult), 0, 5000, 0, 600);
-}
-else if (pidResult > 0){
-	tilt_MotorSpeed = tilt_MotorSpeedCenter + 30 + (int)(((double)map(abs(pidResult), 0, 5000, 0, 600))*1.7);
-}
-  //tilt_MotorSpeed = map(ms,-5185,5185,900,2100);
-  
-  if (abs(error) <= 5) {
-    tilt_MotorSpeed = tilt_MotorSpeedCenter;
-  }
-}
-
-
-
-void updateTiltEncoder(){
-  // CSn needs to cycle from high to low to initiate transfer. Then clock cycles. As it goes high
-// again, data will appear on sda
-  
-  digitalWrite(tiltEncoder_CSnPin, HIGH); // CSn high
-  digitalWrite(tiltEncoder_clockPin, HIGH); // CLK high
-  delayMicroseconds(shortdelay);
-  //digitalWrite(ledPin, HIGH); // signal start of transfer with LED
-  digitalWrite(tiltEncoder_CSnPin, LOW); // CSn low: start of transfer
-  delayMicroseconds(shortdelay); // delay for chip initialization
-  digitalWrite(tiltEncoder_clockPin, LOW); // CLK goes low: start clocking
-  delayMicroseconds(shortdelay*2); // hold low
- 
-  for (int x=0; x <18; x++) // clock signal, 18 transitions, output to clock pin
-  {
-    digitalWrite(tiltEncoder_clockPin, HIGH); //clock goes high
-    delayMicroseconds(shortdelay);
-    inputstream =digitalRead(tiltEncoder_dataPin); // read one bit of data from pin
-    packeddata = ((packeddata << 1) + inputstream);// left-shift summing variable, add pin value
-    digitalWrite(tiltEncoder_clockPin, LOW);
-    delayMicroseconds(shortdelay); // end of one clock cycle
-  }
-
-  //digitalWrite(ledPin, LOW); // signal end of transmission
-  
-  tiltEncoder_AbsolutePosition = (packeddata & absPositionMask) >> 6; // mask rightmost 6 digits of packeddata to zero, into angle.
-
-  //tiltEncoder_AbsolutePosition = (tiltEncoder_AbsolutePosition >> 6); // shift 18-digit angle right 6 digits to form 12-digit value
-  //Serial.println(tiltEncoder_AbsolutePosition,DEC);
-  if (tiltEncoder_PreviousAbsolutePosition > 4065 && tiltEncoder_AbsolutePosition < 30) { //it did a clockwise rev
-    tiltEncoder_RevolutionCount++;
-  } 
-  else if (tiltEncoder_PreviousAbsolutePosition < 30 && tiltEncoder_AbsolutePosition > 4065) { //it did a counter-clockwise rev
-    tiltEncoder_RevolutionCount--;
-  }
-  
-
-  
-  if (encoderDebug)
-  {
-    statusbits = packeddata & statusmask;
-    DECn = statusbits & 2; // goes high if magnet moved away from IC
-    INCn = statusbits & 4; // goes high if magnet moved towards IC
-    LIN = statusbits & 8; // goes high for linearity alarm
-    COF = statusbits & 16; // goes high for cordic overflow: data invalid
-    OCF = statusbits & 32; // this is 1 when the chip startup is finished.
-    if (DECn && INCn) { 
-    //Serial.println("magnet moved out of range"); 
-    }
-    else
-    {
-      if (DECn) { Serial.println("magnet moved away from chip"); }
-      if (INCn) { Serial.println("magnet moved towards chip"); }
-    }
-    if (LIN) { Serial.println("linearity alarm: magnet misaligned? Data questionable."); }
-    if (COF) { Serial.println("cordic overflow: magnet misaligned? Data invalid."); }
-  }
-
-  
-  
-  tiltEncoder_Position = tiltEncoder_AbsolutePosition + 4095*tiltEncoder_RevolutionCount;
-  
-  tiltEncoder_PreviousAbsolutePosition = tiltEncoder_AbsolutePosition;
- // tiltEncoder_AbsolutePosition = 0;
-  
-  packeddata = 0; // reset both variables to zero so they don't just accumulate
-}
 
 void updateControllerTiltEncoder(){
   // CSn needs to cycle from high to low to initiate transfer. Then clock cycles. As it goes high
