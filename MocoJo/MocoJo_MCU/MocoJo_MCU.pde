@@ -253,6 +253,7 @@ void doPlaybackFromComputer()
 		if(!freshRequestSentForNextAxisPositionToComputer){
 			writeRequestForNextAxisPositionToComputer(MocoAxisCameraTilt);
 			freshRequestSentForNextAxisPositionToComputer = true;
+			start = millis();
 		}
 		
 		doSerialDuties();
@@ -291,7 +292,6 @@ void stopPlaybackFromComputer()
 {
 	isPlayback = false;
 	MocoTimer1::stop();
-	writePlaybackHasCompletedToComputer();
 	digitalWrite(ledPin, LOW);
 }
 
@@ -314,6 +314,7 @@ void updateAxisPositionsFromPlayback()
 	//3. distribute position data to servos
 	if(frameCounter == finalFrame+1 && finalFrame != -1){
 		stopPlaybackFromComputer();
+		writePlaybackHasCompletedToComputer();
 		return;
 	}
 	
