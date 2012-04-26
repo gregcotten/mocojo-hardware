@@ -209,7 +209,7 @@ void processInstructionFromComputer(byte instruction){
 		while(Serial.available() < 5){}
 		int axisID = Serial.read();
 		addToAxisTargetBuffer(axisID, readLongFromSerial());
-		writeDebugStringToComputer(String(millis() - start, DEC), true);
+	//	writeDebugStringToComputer(String(millis() - start, DEC), true);
 	}
 	else{
 		writeDebugStringToComputer("Unknown Message Received: " + String(instruction, DEC), true);
@@ -323,7 +323,7 @@ void updateAxisPositionsFromPlayback()
 		//writeDebugStringToComputer("Oh Fuck", true);
 	}
 	
-	//writeDebugStringToComputer(String(frameCounter, DEC), true);
+	writeDebugStringToComputer(String(frameCounter, DEC), true);
 	
 	axis_Target = axis_TargetBuffer[axis_TargetBuffer_currentPosition%bufferSize]; //effectively a virtual sync
 	axis_TargetBuffer_currentPosition++;
