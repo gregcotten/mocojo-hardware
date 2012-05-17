@@ -131,7 +131,7 @@ void doGeneralDuties(){
 }
 
 /*
-	All serial communication starts here.
+	All serial communication is received here.
 */
 void doSerialDuties()
 {
@@ -179,40 +179,50 @@ void deinitSlaveMCU()
 	Processes incoming serial data based on the header instruction.
 */
 void processInstructionFromComputer(byte instruction){
-	if (instruction == MocoProtocolStartSendingAxisDataInstruction){
-		startLiveDataStreamToComputer();
-	}
-	else if (instruction == MocoProtocolStopSendingAxisDataInstruction){
-		stopLiveDataStreamToComputer();
-
-	}
-	else if (instruction == MocoProtocolStartPlaybackInstruction){
-		if (isStreaming){
+	
+	switch (instruction){
+		case MocoProtocolStartSendingAxisDataInstruction:
+			startLiveDataStreamToComputer();
+			break;
+		
+		case MocoProtocolStopSendingAxisDataInstruction:
 			stopLiveDataStreamToComputer();
-		}
-		doPlaybackFromComputer();
-	}
-	else if (instruction == MocoProtocolStopPlaybackInstruction){
-		stopPlaybackFromComputer();
-	}
-	else if (instruction == MocoProtocolRequestAxisResolutionDataInstruction){
-		writeAxisResolutionsToComputer();
-	}
-	else if (instruction ==MocoProtocolHostWillDisconnectNotificationInstruction){
-		deinitSlaveMCU();
-	}
-	else if (instruction == MocoProtocolPlaybackLastFrameSentNotificationInstruction){
-		finalFrame = axis_TargetBuffer_currentBufferPosition-1;
-	}
-	else if (instruction ==  MocoProtocolPlaybackFrameDataHeader){
-		freshRequestSentForNextAxisPositionToComputer = false;
-		while(Serial.available() < 5){}
-		int axisID = Serial.read();
-		addToAxisTargetBuffer(axisID, readLongFromSerial());
-	//	writeDebugStringToComputer(String(millis() - start, DEC), true);
-	}
-	else{
-		writeDebugStringToComputer("Unknown Message Received: " + String(instruction, DEC), true);
+			break;
+		
+		case MocoProtocolStartPlaybackInstruction:
+			if (isStreaming){
+				stopLiveDataStreamToComputer();
+			}
+			doPlaybackFromComputer();
+			break;
+		
+		case MocoProtocolStopPlaybackInstruction:
+			stopPlaybackFromComputer();
+			break;
+	
+		case MocoProtocolRequestAxisResolutionDataInstruction:
+			writeAxisResolutionsToComputer();
+			break;
+	
+		case MocoProtocolHostWillDisconnectNotificationInstruction:
+			deinitSlaveMCU();
+			break;
+	
+		case MocoProtocolPlaybackLastFrameSentNotificationInstruction
+			finalFrame = axis_TargetBuffer_currentBufferPosition-1;
+			break;
+		
+		case MocoProtocolPlaybackFrameDataHeader:
+			freshRequestSentForNextAxisPositionToComputer = false;
+			while(Serial.available() < 5){}
+			int axisID = Serial.read();
+			addToAxisTargetBuffer(axisID, readLongFromSerial());
+		//	writeDebugStringToComputer(String(millis() - start, DEC), true);
+			break;
+		
+		default:
+			writeDebugStringToComputer("Unknown Message Received: " + String(instruction, DEC), true);
+			break;
 	}
 	
 }
