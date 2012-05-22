@@ -208,15 +208,15 @@ void processInstructionFromComputer(byte instruction){
 			deinitSlaveMCU();
 			break;
 	
-		case MocoProtocolPlaybackLastFrameSentNotificationInstruction
+		case MocoProtocolPlaybackLastFrameSentNotificationInstruction:
 			finalFrame = axis_TargetBuffer_currentBufferPosition-1;
 			break;
 		
 		case MocoProtocolPlaybackFrameDataHeader:
 			freshRequestSentForNextAxisPositionToComputer = false;
 			while(Serial.available() < 5){}
-			int axisID = Serial.read();
-			addToAxisTargetBuffer(axisID, readLongFromSerial());
+			//int axisID = Serial.read();
+			addToAxisTargetBuffer(Serial.read(), readLongFromSerial());
 		//	writeDebugStringToComputer(String(millis() - start, DEC), true);
 			break;
 		
@@ -306,9 +306,10 @@ void stopPlaybackFromComputer()
 }
 
 
-//eventually do (MocoJoAxis axis, long target)
+
 void addToAxisTargetBuffer(int axisID, long target)
 {
+	//eventually seperate out for each axis... duh
 	axis_TargetBuffer[axis_TargetBuffer_currentBufferPosition%bufferSize] = target;
 	axis_TargetBuffer_AmountFreshData++;
 	axis_TargetBuffer_currentBufferPosition++;
