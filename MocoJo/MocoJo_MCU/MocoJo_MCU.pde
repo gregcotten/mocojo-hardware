@@ -217,7 +217,7 @@ void processInstructionFromComputer(byte instruction){
 			while(Serial.available() < 5){}
 			//int axisID = Serial.read();
 			addToAxisTargetBuffer(Serial.read(), readLongFromSerial());
-		//	writeDebugStringToComputer(String(millis() - start, DEC), true);
+			writeDebugStringToComputer(String(millis() - start, DEC), true);
 			break;
 		
 		default:
@@ -242,18 +242,18 @@ void stopLiveDataStreamToComputer()
 
 void doPlaybackFromComputer()
 {
-	//reset all data
+	//*********** RESET DATA ***********
 	isPlayback = true;
 	frameCounter = 0;
 	finalFrame = -1;
 	axis_TargetBuffer_AmountFreshData = 0;
 	axis_TargetBuffer_currentPosition = 0;
 	axis_TargetBuffer_currentBufferPosition = 0;
-	//----------------------
+	//**********
 	
-	//TODO: wait to go to first frame????
 	
-	//begin to fill the buffer
+	//*********** BEGIN FIRST BUFFER ***********
+	
 	writeDebugStringToComputer("Filling Buffer", true);
 	
 	//fill buffer until finalFrame is found or we run out of buffer space
@@ -273,12 +273,23 @@ void doPlaybackFromComputer()
 		writeDebugStringToComputer("Playback quit before buffer could fill.", true);
 		return;
 	}
+	
 	writeDebugStringToComputer("Buffer Filled", true);
 	
-	//needs to seek to first position
+	//*********** END FIRST BUFFER ***********
+
+
+
+	//      TODO: HONE SLOWLY TO FIRST POSITIONS!!!!
+
+
+
+
+	//*********** PLAYBACK LOOP BEGIN ***********
 	MocoTimer1::set(1.0/50.0, updateAxisPositionsFromPlayback);
 	MocoTimer1::start();
 	writePlaybackHasStartedToComputer();
+	
 	while(isPlayback){
 		if (axis_TargetBuffer_AmountFreshData < bufferSize-1 && axis_TargetBuffer_currentBufferPosition%bufferSize != axis_TargetBuffer_currentPosition%bufferSize){
 			writeDebugStringToComputer("buffer " + String(axis_TargetBuffer_currentBufferPosition, DEC) + ", current " + String(axis_TargetBuffer_currentPosition, DEC), false);
@@ -295,6 +306,7 @@ void doPlaybackFromComputer()
 		doGeneralDuties();
 		
 	}
+	//*********** PLAYBACK LOOP END ***********
 	
 }
 
