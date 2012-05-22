@@ -15,7 +15,6 @@ const int ledPin2 = 43; //LED connected to digital pin 13
 //1 turns the debug on, 0 turns the debug off
 const int servoTerminalDebug = 0; //show PID stuff
 const int servoGraphDebug = 0; //show positions and start accepting input
-byte receiveBuffer[4];
 const int encoderDebug = 0; //look for encoder errors
 const int timingDebug = 0; //for debugging control loop frequency
 
@@ -342,6 +341,7 @@ void updateAxisPositionsFromPlayback()
 	if(frameCounter == finalFrame+1 && finalFrame != -1){
 		stopPlaybackFromComputer();
 		writePlaybackHasCompletedToComputer();
+		writeDebugStringToComputer("Playback Completed at Frame "+ String(frameCounter-1, DEC), true);
 		return;
 	}
 	
