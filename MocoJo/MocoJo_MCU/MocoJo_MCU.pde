@@ -335,6 +335,10 @@ void updateAxisPositionsFromPlayback()
 	// ALSO maybe get current position data from all these servos 
 	//2. request next playback frame -> receive position data
 	//3. distribute position data to servos
+	
+	/*
+		If we have reached the final frame, stop!
+	*/
 	if(frameCounter == finalFrame+1 && finalFrame != -1){
 		stopPlaybackFromComputer();
 		writePlaybackHasCompletedToComputer();
@@ -342,11 +346,10 @@ void updateAxisPositionsFromPlayback()
 	}
 	
 	if(axis_TargetBuffer_currentPosition > axis_TargetBuffer_currentBufferPosition){
-		//digitalWrite(ledPin, HIGH);
-		//writeDebugStringToComputer("Oh Fuck", true);
+		//THIS SHOULD NEVER HAPPEN
 	}
 	
-	writeDebugStringToComputer(String(frameCounter, DEC), true);
+	//writeDebugStringToComputer(String(frameCounter, DEC), true);
 	
 	axis_Target = axis_TargetBuffer[axis_TargetBuffer_currentPosition%bufferSize]; //effectively a virtual sync
 	axis_TargetBuffer_currentPosition++;
