@@ -39,6 +39,9 @@ long frameCounter;
 boolean freshRequestSentForNextAxisPositionToComputer;
 //----------------------------------------------
 
+//--------------MCU GPIO------------------------
+const int MCU_VirtualShutter_SyncOut_Pin = 10; //HIGH is shutter off cycle, LOW is shutter on cycle
+//----------------------------------------------
 
 //---------------AXIS DATA--------------------
 //TODO: Write MocoAxis class
@@ -96,6 +99,8 @@ void setup()
 	digitalWrite(ledPin, LOW);
 	pinMode(ledPin2, OUTPUT); // visual signal of I/O to chip
 	digitalWrite(ledPin2, LOW);
+	pinMode(MCU_VirtualShutter_SyncOut_Pin, OUTPUT);
+	setVirtualShutter(HIGH);
 	
 	pinMode(controllerTiltEncoder_clockPin, OUTPUT); // SCK
 	pinMode(controllerTiltEncoder_CSnPin, OUTPUT); // CSn -- has to toggle high and low to signal chip to start data transfer
@@ -149,6 +154,13 @@ void doSerialDuties()
 
 		}
 	}
+}
+
+/*
+	Sets the shutter sync out logic value.
+*/
+void setVirtualShutter(int value){
+	digitalWrite(MCU_VirtualShutter_SyncOut_Pin, value);
 }
 
 /*
