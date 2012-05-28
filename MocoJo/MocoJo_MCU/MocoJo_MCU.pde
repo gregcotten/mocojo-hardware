@@ -1,6 +1,9 @@
 #include <Servo.h>
 #include <MocoTimer1.h>
 #include <MocoProtocolConstants.h>
+#include <SerialTools.h>
+#include <MocoJoCommunication.h>
+#include <Logger.h>
 
 #define FRAMERATE 50
 
@@ -21,8 +24,7 @@ const int timingDebug = 0; //for debugging control loop frequency
 long start = 0; //for timing debug
 long loopCount = 0; //for timing debug
 
-boolean messageDebug = false;
-boolean messageDebugHighPriority = true;
+
 //----------------------------------------
 
 
@@ -95,6 +97,9 @@ void setup()
 {
 	Serial.begin(MocoProtocolBaudRate);
 	Serial.flush();
+	
+	Logger::setDebugMode(false, true);
+	
 	pinMode(ledPin, OUTPUT); // visual signal of I/O to chip
 	digitalWrite(ledPin, LOW);
 	pinMode(ledPin2, OUTPUT); // visual signal of I/O to chip
@@ -149,7 +154,7 @@ void doSerialDuties()
 			if(Serial.read() == MocoProtocolRequestHandshakeInstruction)
 			{
 				initSlaveMCU();
-				writeHandshakeSuccessToComputer();
+				MocoJoCommunication::writeHandshakeSuccessToComputer();
 			}
 
 		}
@@ -157,7 +162,7 @@ void doSerialDuties()
 }
 
 /*
-	Sets the shutter sync out logic value.
+	Sets the shutter SYNC OUT logic level value.
 */
 void setVirtualShutter(int value){
 	digitalWrite(MCU_VirtualShutter_SyncOut_Pin, value);
@@ -227,12 +232,12 @@ void processInstructionFromComputer(byte instruction){
 			freshRequestSentForNextAxisPositionToComputer = false;
 			while(Serial.available() < 5){}
 			//int axisID = Serial.read();
-			addToAxisTargetBuffer(Serial.read(), readLongFromSerial());
-			writeDebugStringToComputer(String(millis() - start, DEC), true);
+			addToAxisTargetBuffer(Serial.read(), SerialTools::readLongFromSerial());
+			Logger::writeDebugString(String(millis() - start, DEC), true);
 			break;
 		
 		default:
-			writeDebugStringToComputer("Unknown Message Received: " + String(instruction, DEC), true);
+			Logger::writeDebugString("Unknown Message Received: " + String(instruction, DEC), true);
 			break;
 	}
 	
@@ -265,14 +270,14 @@ void doPlaybackFromComputer()
 	
 	//*********** BEGIN FIRST BUFFER ***********
 	
-	writeDebugStringToComputer("Filling Buffer", true);
+	Logger::writeDebugString("Filling Buffer", true);
 	
 	//fill buffer until finalFrame is found or we run out of buffer space
 	freshRequestSentForNextAxisPositionToComputer = false;
 	
 	while(axis_TargetBuffer_AmountFreshData<bufferSize && isPlayback && finalFrame == -1){
 		if(!freshRequestSentForNextAxisPositionToComputer){
-			writeRequestForNextAxisPositionToComputer(MocoAxisCameraTilt);
+			MocoJoCommunication::writeRequestForNextAxisPositionToComputer(MocoAxisCameraTilt);
 			freshRequestSentForNextAxisPositionToComputer = true;
 			start = millis();
 		}
@@ -281,11 +286,11 @@ void doPlaybackFromComputer()
 		doGeneralDuties();
 	}
 	if(!isPlayback){
-		writeDebugStringToComputer("Playback quit before buffer could fill.", true);
+		Logger::writeDebugString("Playback quit before buffer could fill.", true);
 		return;
 	}
 	
-	writeDebugStringToComputer("Buffer Filled", true);
+	Logger::writeDebugString("Buffer Filled", true);
 	
 	//*********** END FIRST BUFFER ***********
 
@@ -299,13 +304,13 @@ void doPlaybackFromComputer()
 	//*********** PLAYBACK LOOP BEGIN ***********
 	MocoTimer1::set(1.0/50.0, updateAxisPositionsFromPlayback);
 	MocoTimer1::start();
-	writePlaybackHasStartedToComputer();
+	MocoJoCommunication::writePlaybackHasStartedToComputer();
 	
 	while(isPlayback){
 		if (axis_TargetBuffer_AmountFreshData < bufferSize-1 && axis_TargetBuffer_currentBufferPosition%bufferSize != axis_TargetBuffer_currentPosition%bufferSize){
-			writeDebugStringToComputer("buffer " + String(axis_TargetBuffer_currentBufferPosition, DEC) + ", current " + String(axis_TargetBuffer_currentPosition, DEC), false);
+			Logger::writeDebugString("buffer " + String(axis_TargetBuffer_currentBufferPosition, DEC) + ", current " + String(axis_TargetBuffer_currentPosition, DEC), false);
 			if(!freshRequestSentForNextAxisPositionToComputer){
-				writeRequestForNextAxisPositionToComputer(MocoAxisCameraTilt);
+				MocoJoCommunication::writeRequestForNextAxisPositionToComputer(MocoAxisCameraTilt);
 				freshRequestSentForNextAxisPositionToComputer = true;
 				start = millis();
 			}
@@ -352,8 +357,8 @@ void updateAxisPositionsFromPlayback()
 	*/
 	if(frameCounter == finalFrame+1 && finalFrame != -1){
 		stopPlaybackFromComputer();
-		writePlaybackHasCompletedToComputer();
-		writeDebugStringToComputer("Playback Completed at Frame "+ String(frameCounter-1, DEC), true);
+		MocoJoCommunication::writePlaybackHasCompletedToComputer();
+		Logger::writeDebugString("Playback Completed at Frame "+ String(frameCounter-1, DEC), true);
 		return;
 	}
 	
@@ -361,7 +366,7 @@ void updateAxisPositionsFromPlayback()
 		//THIS SHOULD NEVER HAPPEN
 	}
 	
-	//writeDebugStringToComputer(String(frameCounter, DEC), true);
+	//Logger::writeDebugString(String(frameCounter, DEC), true);
 	
 	axis_Target = axis_TargetBuffer[axis_TargetBuffer_currentPosition%bufferSize]; //effectively a virtual sync
 	axis_TargetBuffer_currentPosition++;
@@ -372,87 +377,32 @@ void updateAxisPositionsFromPlayback()
 }
 
 
-void writeRequestForNextAxisPositionToComputer(int axisID)
-{
-	Serial.write(MocoProtocolAdvancePlaybackRequestType); 
-	Serial.write(axisID);
-	writeLongToSerial(axis_Position);
-}
-
-void writePlaybackHasStartedToComputer()
-{
-	Serial.write(MocoProtocolPlaybackStartingNotificationResponseType);
-	Serial.write(1);
-	Serial.write(1);
-	Serial.write(1);
-	Serial.write(1);
-	Serial.write(1);
-}
-
-void writePlaybackHasCompletedToComputer()
-{
-	Serial.write(MocoProtocolPlaybackCompleteNotificationResponseType);
-	Serial.write(1);
-	Serial.write(1);
-	Serial.write(1);
-	Serial.write(1);
-	Serial.write(1);
-}
-
+/*
+	Eventually port to MocoJoCommunication and have writeAxisPositionsToComputer(MocoJoAxis[] axes)
+*/
 void writeAxisPositionsToComputer()
 {
 	//TEMP - eventually will interate through all online axes
 	Serial.write(MocoProtocolAxisPositionResponseType);//we are sending axis position data
 	Serial.write(MocoAxisCameraTilt);//we are saying this is the tilt
-	writeLongToSerial(axis_Position);
+	SerialTools::writeLongToSerial(axis_Position);
 
 }
 
-void writeHandshakeSuccessToComputer()
-{
-	Serial.write(MocoProtocolHandshakeResponseType);
-	Serial.write(1);
-	writeLongToSerial((long)MocoProtocolHandshakeSuccessfulResponse);
-}
 
-void writeDebugStringToComputer(String str, boolean force)
-{
-	if(!messageDebugHighPriority){
-		force = false;
-	}
-	if(!messageDebug && !force){
-		return;
-	}
-	Serial.write(MocoProtocolNewlineDelimitedDebugStringResponseType);
-	Serial.println(str);
-}
-
+/*
+	Eventually port to MocoJoCommunication and have writeAxisResolutionsToComputer(MocoJoAxis[] axes)
+*/
 void writeAxisResolutionsToComputer()
 {
 	//TEMP:
 	Serial.write(MocoProtocolAxisResolutionResponseType);
 	Serial.write(MocoAxisCameraTilt);//we are saying this is the tilt
-	writeLongToSerial(axis_Resolution);
+	SerialTools::writeLongToSerial(axis_Resolution);
 	//-----
 }
 
-void writeLongToSerial(long number)
-{
-	Serial.write((uint8_t)((number >> 24) & 0xFF));
-	Serial.write((uint8_t)((number >> 16) & 0xFF));
-	Serial.write((uint8_t)((number >> 8) & 0XFF));
-	Serial.write((uint8_t)((number & 0XFF)));
-}
 
-long readLongFromSerial()
-{
-	byte byte1 = Serial.read();
-	byte byte2 = Serial.read();
-	byte byte3 = Serial.read();
-	byte byte4 = Serial.read();
-	
-	return ((byte1 << 24) + (byte2 << 16) + (byte3 << 8) + (byte4));
-}
 
 
 void updateControllerTiltEncoder(){
