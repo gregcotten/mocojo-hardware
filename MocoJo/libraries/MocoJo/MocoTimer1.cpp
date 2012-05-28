@@ -1,5 +1,5 @@
 /*
-  MocoTimer1.h - Using timer1 with 1ms resolution
+  MocoTimer1.h - PIC32 timer1 implementation with 1ms resolution
   Greg Cotten
 */
 
