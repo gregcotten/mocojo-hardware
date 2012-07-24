@@ -5,8 +5,8 @@
 #include <WString.h>
 
 namespace SerialTools {
-	void writeIntToSerial(int number);    
-    int readIntFromSerial();
+	void writeShortToSerial(int number);    
+    int readShortFromSerial();
 	void writeLongToSerial(long number);
 	long readLongFromSerial();
 }

@@ -2,12 +2,14 @@
 #include <WProgram.h>
 #include <WString.h>
 
-void SerialTools::writeIntToSerial(int number){
+//All send/receive methods use MSB byte order
+
+void SerialTools::writeShortToSerial(int number){
     Serial.write((uint8_t)((number >> 8) & 0XFF));
 	Serial.write((uint8_t)((number & 0XFF)));
 }
 
-int SerialTools::readIntFromSerial(){
+int SerialTools::readShortFromSerial(){
     byte byte1 = Serial.read();
     byte byte2 = Serial.read();
     return (byte1 << 8) + (byte2);
