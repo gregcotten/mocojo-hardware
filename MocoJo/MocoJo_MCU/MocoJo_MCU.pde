@@ -241,7 +241,16 @@ void processInstructionFromComputer(byte instruction){
 			addToAxisTargetBuffer(Serial.read(), SerialTools::readLongFromSerial());
 			//Logger::writeDebugString(String(millis() - start, DEC), true);
 			break;
-		
+
+		case MocoProtocolSeekPositionDataHeader:
+			if (isPlayback){
+				SerialTools::readDummyBytesFromSerial(5);
+				return;
+			}
+			Serial.read();//temp bogus axis
+			servo.write(SerialTools::readLongFromSerial());
+			break;
+
 		default:
 			Logger::writeDebugString("Unknown Message Received: " + String(instruction, DEC), true);
 			break;
