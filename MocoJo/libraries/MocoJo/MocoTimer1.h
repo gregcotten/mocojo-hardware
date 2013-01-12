@@ -3,9 +3,9 @@
 
 namespace MocoTimer1 {
 	extern unsigned long period;
-	extern void (*func)();
+	extern void (*function)();
 
-	void set(float timeInSeconds, void (*f)());
+	void set(float timeInSeconds, void (*func)());
 	void start();
 	void stop();
 	void overflow();

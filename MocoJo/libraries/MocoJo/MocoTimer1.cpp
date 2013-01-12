@@ -7,11 +7,11 @@
 #include <plib.h>
 
 unsigned long MocoTimer1::period;
-void (*MocoTimer1::func)();
+void (*MocoTimer1::function)();
 
-void MocoTimer1::set(float timeInSeconds, void (*f)()) {
+void MocoTimer1::set(float timeInSeconds, void (*func)()) {
 	period = (unsigned long)((timeInSeconds*80000000.0)/256.0) - 1;
-	func = f;
+	function = func;
 }
 
 void MocoTimer1::start() {
@@ -27,7 +27,7 @@ void MocoTimer1::stop() {
 }
 
 void MocoTimer1::overflow() {
-	(*func)();
+	(*function)();
 }
 
 extern "C"
