@@ -31,3 +31,9 @@ long SerialTools::readLongFromSerial(){
 	return ((byte1 << 24) + (byte2 << 16) + (byte3 << 8) + (byte4));
 }
 
+void SerialTools::writeDummyBytesToSerial(int numberOfDummyBytes){
+	for (int i = 0; i < numberOfDummyBytes; i++){
+		Serial.write(1);
+	}
+}
+

@@ -23,19 +23,11 @@ void MocoJoCommunication::writeRequestForNextAxisPositionToComputer(int axisID)
 void MocoJoCommunication::writePlaybackHasStartedToComputer()
 {
 	Serial.write(MocoProtocolPlaybackStartingNotificationResponseType);
-	Serial.write(1);
-	Serial.write(1);
-	Serial.write(1);
-	Serial.write(1);
-	Serial.write(1);
+	SerialTools::writeDummyBytesToSerial(5);
 }
 
 void MocoJoCommunication::writePlaybackHasCompletedToComputer()
 {
 	Serial.write(MocoProtocolPlaybackCompleteNotificationResponseType);
-	Serial.write(1);
-	Serial.write(1);
-	Serial.write(1);
-	Serial.write(1);
-	Serial.write(1);
+	SerialTools::writeDummyBytesToSerial(5);
 }

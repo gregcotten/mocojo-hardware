@@ -9,6 +9,7 @@ namespace SerialTools {
     int readShortFromSerial();
 	void writeLongToSerial(long number);
 	long readLongFromSerial();
+	void writeDummyBytesToSerial();
 }
 
 #endif
