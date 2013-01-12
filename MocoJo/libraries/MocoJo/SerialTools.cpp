@@ -37,3 +37,9 @@ void SerialTools::writeDummyBytesToSerial(int numberOfDummyBytes){
 	}
 }
 
+void SerialTools::readDummyBytesFromSerial(int numberOfDummyBytes){
+	for (int i = 0; i < numberOfDummyBytes; i++){
+		Serial.read();
+	}
+}
+

@@ -10,6 +10,7 @@ namespace SerialTools {
 	void writeLongToSerial(long number);
 	long readLongFromSerial();
 	void writeDummyBytesToSerial(int numberOfBytes);
+	void readDummyBytesFromSerial(int numberOfBytes);
 }
 
 #endif
