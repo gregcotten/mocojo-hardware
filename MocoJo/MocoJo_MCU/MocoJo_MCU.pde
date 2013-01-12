@@ -8,6 +8,11 @@
 #define FRAMERATE 50
 
 //DECLARATIONS
+Servo servo;
+int servo_position = 0;
+int servo_min = 550;
+int servo_max = 2300;
+int servo_resolution = 1750;
 
 //---------------GENERAL------------------
 const int ledPin = 13; //LED connected to digital pin 13
@@ -110,7 +115,8 @@ void setup()
 	pinMode(controllerTiltEncoder_clockPin, OUTPUT); // SCK
 	pinMode(controllerTiltEncoder_CSnPin, OUTPUT); // CSn -- has to toggle high and low to signal chip to start data transfer
 	pinMode(controllerTiltEncoder_inputPin, INPUT); // SDA
-
+	servo.attach(9, servo_min, servo_max);
+	servo.write(0);
 }
 
 void loop()
@@ -233,7 +239,7 @@ void processInstructionFromComputer(byte instruction){
 			while(Serial.available() < 5){}
 			//int axisID = Serial.read();
 			addToAxisTargetBuffer(Serial.read(), SerialTools::readLongFromSerial());
-			Logger::writeDebugString(String(millis() - start, DEC), true);
+			//Logger::writeDebugString(String(millis() - start, DEC), true);
 			break;
 		
 		default:
@@ -308,11 +314,11 @@ void doPlaybackFromComputer()
 	
 	while(isPlayback){
 		if (axis_TargetBuffer_AmountFreshData < bufferSize-1 && axis_TargetBuffer_currentBufferPosition%bufferSize != axis_TargetBuffer_currentPosition%bufferSize){
-			Logger::writeDebugString("buffer " + String(axis_TargetBuffer_currentBufferPosition, DEC) + ", current " + String(axis_TargetBuffer_currentPosition, DEC), false);
+			//Logger::writeDebugString("buffer " + String(axis_TargetBuffer_currentBufferPosition, DEC) + ", current " + String(axis_TargetBuffer_currentPosition, DEC), false);
 			if(!freshRequestSentForNextAxisPositionToComputer){
 				MocoJoCommunication::writeRequestForNextAxisPositionToComputer(MocoAxisCameraTilt);
 				freshRequestSentForNextAxisPositionToComputer = true;
-				start = millis();
+				//start = millis();
 			}
 		}
 		if(axis_TargetBuffer_AmountFreshData < bufferLowSizeWarning){
@@ -368,7 +374,8 @@ void updateAxisPositionsFromPlayback()
 	
 	//Logger::writeDebugString(String(frameCounter, DEC), true);
 	
-	axis_Target = axis_TargetBuffer[axis_TargetBuffer_currentPosition%bufferSize]; //effectively a virtual sync
+	//axis_Target = axis_TargetBuffer[axis_TargetBuffer_currentPosition%bufferSize]; //effectively a virtual sync
+	servo.write(axis_TargetBuffer[axis_TargetBuffer_currentPosition%bufferSize]);
 	axis_TargetBuffer_currentPosition++;
 	axis_TargetBuffer_AmountFreshData--;
 	
@@ -385,7 +392,7 @@ void writeAxisPositionsToComputer()
 	//TEMP - eventually will interate through all online axes
 	Serial.write(MocoProtocolAxisPositionResponseType);//we are sending axis position data
 	Serial.write(MocoAxisCameraTilt);//we are saying this is the tilt
-	SerialTools::writeLongToSerial(axis_Position);
+	SerialTools::writeLongToSerial((long)servo.read());
 
 }
 
@@ -398,7 +405,7 @@ void writeAxisResolutionsToComputer()
 	//TEMP:
 	Serial.write(MocoProtocolAxisResolutionResponseType);
 	Serial.write(MocoAxisCameraTilt);//we are saying this is the tilt
-	SerialTools::writeLongToSerial(axis_Resolution);
+	SerialTools::writeLongToSerial((long)180);
 	//-----
 }
 
