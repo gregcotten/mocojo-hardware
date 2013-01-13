@@ -40,4 +40,5 @@ class AS5045{
 		int shortdelay; // this is the microseconds of delay in the data clock
 		int longdelay; // this is the milliseconds between readings
 		
-}
+};
+#endif
