@@ -10,9 +10,7 @@
 //DECLARATIONS
 Servo servo;
 int servo_position = 0;
-int servo_min = 550;
-int servo_max = 2300;
-int servo_resolution = 1750;
+int servo_resolution = 180;
 
 //---------------GENERAL------------------
 const int ledPin = 13; //LED connected to digital pin 13
@@ -115,8 +113,8 @@ void setup()
 	pinMode(controllerTiltEncoder_clockPin, OUTPUT); // SCK
 	pinMode(controllerTiltEncoder_CSnPin, OUTPUT); // CSn -- has to toggle high and low to signal chip to start data transfer
 	pinMode(controllerTiltEncoder_inputPin, INPUT); // SDA
-	servo.attach(9, servo_min, servo_max);
-	servo.write(0);
+	servo.attach(9);
+	servo.writeMicroseconds(servo_position);
 }
 
 void loop()
@@ -243,12 +241,15 @@ void processInstructionFromComputer(byte instruction){
 			break;
 
 		case MocoProtocolSeekPositionDataHeader:
+			while(Serial.available() < 5){}
 			if (isPlayback){
 				SerialTools::readDummyBytesFromSerial(5);
 				return;
 			}
 			Serial.read();//temp bogus axis
-			servo.write(SerialTools::readLongFromSerial());
+			servo_position = SerialTools::readLongFromSerial();
+			servo.write(servo_position);
+			Logger::writeDebugString("Position Received: " + String(servo_position, DEC), true);
 			break;
 
 		default:
@@ -401,7 +402,7 @@ void writeAxisPositionsToComputer()
 	//TEMP - eventually will interate through all online axes
 	Serial.write(MocoProtocolAxisPositionResponseType);//we are sending axis position data
 	Serial.write(MocoAxisCameraTilt);//we are saying this is the tilt
-	SerialTools::writeLongToSerial((long)servo.read());
+	SerialTools::writeLongToSerial((long)servo_position);
 
 }
 
@@ -414,7 +415,7 @@ void writeAxisResolutionsToComputer()
 	//TEMP:
 	Serial.write(MocoProtocolAxisResolutionResponseType);
 	Serial.write(MocoAxisCameraTilt);//we are saying this is the tilt
-	SerialTools::writeLongToSerial((long)180);
+	SerialTools::writeLongToSerial((long)servo_resolution);
 	//-----
 }
 
