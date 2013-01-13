@@ -26,12 +26,10 @@ const int timingDebug = 0; //for debugging control loop frequency
 
 long start = 0; //for timing debug
 long loopCount = 0; //for timing debug
-
-
 //----------------------------------------
 
 
-//---------------MCU LOGIC--------------------
+//---------------Moco LOGIC--------------------
 boolean firstBoot = true;
 const boolean isSlave = true;
 boolean isInitialized = false;
@@ -44,7 +42,7 @@ long frameCounter;
 boolean freshRequestSentForNextAxisPositionToComputer;
 //----------------------------------------------
 
-//--------------MCU GPIO------------------------
+//--------------Moco GPIO------------------------
 const int MCU_VirtualShutter_SyncOut_Pin = 10; //HIGH is shutter off cycle, LOW is shutter on cycle
 //----------------------------------------------
 
@@ -61,40 +59,6 @@ long axis_TargetBuffer[FRAMERATE*2];
 volatile int axis_TargetBuffer_AmountFreshData = 0;
 long axis_TargetBuffer_currentPosition = 0;
 long axis_TargetBuffer_currentBufferPosition = 0;
-//-------------------------------------------
-
-
-
-//---------------WHEELS--------------------
-long controllerTiltEncoder_Position = 0;
-long controllerTiltEncoder_RevolutionCount = 0;
-long controllerTiltEncoder_AbsolutePosition = 0;
-long controllerTiltEncoder_PreviousAbsolutePosition = 2047; //middle point so a rev is not counted at start
-int inputstream_2 = 0; //one bit read from pin
-long packeddata_2 = 0; //two bytes concatenated from inputstream
-const int controllerTiltEncoder_CSnPin = 5; //output to chip select
-const int controllerTiltEncoder_clockPin = 6; //output to clock
-const int controllerTiltEncoder_inputPin = 7; //read AS5045
-//-------------------------------------------
-
-
-
-//----------MAGNETIC ENCODER GENERAL-----------
-int inputstream = 0; //one bit read from pin
-long packeddata = 0; //two bytes concatenated from inputstream
-long absPosition = 0; //holds processed angle value
-long absPositionMask = 262080; // 0x111111111111000000: mask to obtain first 12 digits with position info
-long statusmask = 63; // 0x000000000000111111; mask to obtain last 6 digits containing status info
-long statusbits; //holds status/error information
-int DECn; //bit holding decreasing magnet field error data
-int INCn; //bit holding increasing magnet field error data
-int OCF; //bit holding startup-valid bit
-int COF; //bit holding cordic DSP processing error data
-int LIN; //bit holding magnet field displacement error data
-int shortdelay = 1; // this is the microseconds of delay in the data clock
-int longdelay = 1; // this is the milliseconds between readings
-//----------------------------------------------
-
 
 void setup()
 {
@@ -417,79 +381,6 @@ void writeAxisResolutionsToComputer()
 	Serial.write(MocoAxisCameraTilt);//we are saying this is the tilt
 	SerialTools::writeLongToSerial((long)servo_resolution);
 	//-----
-}
-
-
-
-
-void updateControllerTiltEncoder(){
-  // CSn needs to cycle from high to low to initiate transfer. Then clock cycles. As it goes high
-// again, data will appear on sda
-  
-  digitalWrite(controllerTiltEncoder_CSnPin, HIGH); // CSn high
-  digitalWrite(controllerTiltEncoder_clockPin, HIGH); // CLK high
-  delayMicroseconds(shortdelay);
-  //digitalWrite(ledPin, HIGH); // signal start of transfer with LED
-  digitalWrite(controllerTiltEncoder_CSnPin, LOW); // CSn low: start of transfer
-  delayMicroseconds(shortdelay); // delay for chip initialization
-  digitalWrite(controllerTiltEncoder_clockPin, LOW); // CLK goes low: start clocking
-  delayMicroseconds(shortdelay*2); // hold low
- 
-  for (int x=0; x <18; x++) // clock signal, 18 transitions, output to clock pin
-  {
-    digitalWrite(controllerTiltEncoder_clockPin, HIGH); //clock goes high
-    delayMicroseconds(shortdelay);
-    inputstream_2 =digitalRead(controllerTiltEncoder_inputPin); // read one bit of data from pin
-    packeddata_2 = ((packeddata_2 << 1) + inputstream_2);// left-shift summing variable, add pin value
-    digitalWrite(controllerTiltEncoder_clockPin, LOW);
-    delayMicroseconds(shortdelay); // end of one clock cycle
-  }
-
-  //digitalWrite(ledPin, LOW); // signal end of transmission
-  
-  controllerTiltEncoder_AbsolutePosition = packeddata_2 & absPositionMask; // mask rightmost 6 digits of packeddata to zero, into angle.
-
-  controllerTiltEncoder_AbsolutePosition = (controllerTiltEncoder_AbsolutePosition >> 6); // shift 18-digit angle right 6 digits to form 12-digit value
-  //Serial.println(controllerPanEncoder_AbsolutePosition,DEC);
-  
-  //detect a revolution!
-  if (controllerTiltEncoder_PreviousAbsolutePosition > 3900 && controllerTiltEncoder_AbsolutePosition < 100) { //it did a clockwise rev
-    controllerTiltEncoder_RevolutionCount++;
-  } 
-  else if (controllerTiltEncoder_PreviousAbsolutePosition < 100 && controllerTiltEncoder_AbsolutePosition > 3900) { //it did a counter-clockwise rev
-    controllerTiltEncoder_RevolutionCount--;
-  }
-  
-
-  
-  if (encoderDebug)
-  {
-    statusbits = packeddata_2 & statusmask;
-    DECn = statusbits & 2; // goes high if magnet moved away from IC
-    INCn = statusbits & 4; // goes high if magnet moved towards IC
-    LIN = statusbits & 8; // goes high for linearity alarm
-    COF = statusbits & 16; // goes high for cordic overflow: data invalid
-    OCF = statusbits & 32; // this is 1 when the chip startup is finished.
-    if (DECn && INCn) { 
-    //Serial.println("magnet moved out of range"); 
-    }
-    else
-    {
-      if (DECn) { Serial.println("magnet moved away from chip"); }
-      if (INCn) { Serial.println("magnet moved towards chip"); }
-    }
-    if (LIN) { Serial.println("linearity alarm: magnet misaligned? Data questionable."); }
-    if (COF) { Serial.println("cordic overflow: magnet misaligned? Data invalid."); }
-  }
-
-  
-  
-  controllerTiltEncoder_Position = controllerTiltEncoder_AbsolutePosition + 4095*controllerTiltEncoder_RevolutionCount;
-  
-  controllerTiltEncoder_PreviousAbsolutePosition = controllerTiltEncoder_AbsolutePosition;
- // controllerTiltEncoder_AbsolutePosition = 0;
-  
-  packeddata_2 = 0; // reset both variables to zero so they don't just accumulate
 }
 
 
