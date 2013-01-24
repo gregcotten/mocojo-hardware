@@ -1,5 +1,5 @@
 #include <SMC.h>
-#include <SMCProtocol.h>
+#include <SMCProtocolConstants.h>
 
 #include <WProgram.h>
 #include <WString.h>
