@@ -11,7 +11,7 @@ class SMC{
 		void setMotorSpeed(int speed);
 		void exitSafeStart();
 	private:
-
+		int getVariable(int variableID);
 		
 };
 #endif

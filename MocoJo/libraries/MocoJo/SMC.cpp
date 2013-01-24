@@ -33,3 +33,15 @@ void SMC::setMotorSpeed(int speed){
 	Serial1.write(speed >> 5); //speed byte 2
 	
 }
+
+int SMC::getVariable(variableID){
+	Serial1.write(SMCProtocolGetVariable);
+	Serial1.write(variableID);
+	
+	//wait for the response to arrive!
+	while(Serial1.available() < 2){}
+	
+	int lowByte = Serial1.read();
+	int highByte = Serial1.read();
+	return lowByte + 256*highByte;
+}
