@@ -6,7 +6,7 @@ enum{
 
 // Commands
 enum{
-	SMCProtocolStopMotor = 0xE0
+	SMCProtocolStopMotor = 0xE0,
 	SMCProtocolExitSafeStart = 0x83,
 	SMCProtocolSetMotorForward = 0x85,
 	SMCProtocolSetMotorReverse = 0x86,

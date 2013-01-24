@@ -7,8 +7,9 @@
 class SMC{
 	public:
 		SMC();
+		void initialize();
 		void setMotorSpeed(int speed);
-		void SMC::exitSafeStart();
+		void exitSafeStart();
 	private:
 
 		
