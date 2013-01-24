@@ -20,8 +20,7 @@ int _encoderRevolutionCount;
 //----------MAGNETIC ENCODER GENERAL-----------
 int inputstream = 0; //one bit read from pin
 long packeddata = 0; //two bytes concatenated from inputstream
-long absPosition = 0; //holds processed angle value
-long absPositionMask = 262080; // 0x111111111111000000: mask to obtain first 12 digits with position info
+long relativePositionMask = 262080; // 0x111111111111000000: mask to obtain first 12 digits with position info
 long statusmask = 63; // 0x000000000000111111; mask to obtain last 6 digits containing status info
 long statusbits; //holds status/error information
 int DECn; //bit holding decreasing magnet field error data
@@ -71,7 +70,7 @@ void AS5045::update(){
 
   //digitalWrite(ledPin, LOW); // signal end of transmission
   
-  _encoderRelativePosition = packeddata & absPositionMask; // mask rightmost 6 digits of packeddata to zero, into angle.
+  _encoderRelativePosition = packeddata & relativePositionMask; // mask rightmost 6 digits of packeddata to zero, into angle.
 
   _encoderRelativePosition = (_encoderRelativePosition >> 6); // shift 18-digit angle right 6 digits to form 12-digit value
   //Serial.println(controllerPanEncoder_AbsolutePosition,DEC);
