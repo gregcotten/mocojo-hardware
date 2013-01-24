@@ -5,7 +5,7 @@
 
 namespace MocoJoCommunication {
 	void writeHandshakeSuccessToComputer();
-	void writeRequestForNextAxisPositionToComputer(int axisID);
+	void writeRequestForNextFrameToComputer(int axisID);
 	void writePlaybackHasStartedToComputer();
 	void writePlaybackHasCompletedToComputer();
 }

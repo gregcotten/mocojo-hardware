@@ -9,7 +9,7 @@ void MocoJoCommunication::writeHandshakeSuccessToComputer()
 	Serial.write(MocoProtocolHandshakeResponseType);
 	Serial.write(1);
 	Serial.write(MocoProtocolHandshakeSuccessfulResponse);
-	SerialTools.writeDummyBytesToSerial(3);
+	SerialTools::writeDummyBytesToSerial(3);
 }
 
 void MocoJoCommunication::writeRequestForNextFrameToComputer(int axisID)
