@@ -1,0 +1,35 @@
+#include <SMC.h>
+#include <SMCProtocol.h>
+
+#include <WProgram.h>
+#include <WString.h>
+
+
+SMC::SMC(){
+
+}
+
+void SMC::initialize(){
+	Serial1.begin(SMCProtocolBaudRate);
+	delay(1);
+	Serial1.write(0xAA); //SMC needs to establish the baud rate
+}
+
+void SMC::exitSafeStart(){
+	Serial1.write(SMCProtocolExitSafeStart);
+}
+
+void SMC::setMotorSpeed(int speed){
+
+	if (speed >= 0){
+		Serial1.write(SMCProtocolSetMotorForward);
+	}
+	else {
+		Serial1.write(SMCProtocolSetMotorReverse);
+		speed = -speed;
+	}
+
+	Serial1.write(speed % 32); //speed byte 1
+	Serial1.write(speed >> 5); //speed byte 2
+	
+}

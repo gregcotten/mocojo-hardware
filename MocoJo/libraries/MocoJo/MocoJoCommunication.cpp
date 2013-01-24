@@ -8,10 +8,11 @@ void MocoJoCommunication::writeHandshakeSuccessToComputer()
 {
 	Serial.write(MocoProtocolHandshakeResponseType);
 	Serial.write(1);
-	SerialTools::writeLongToSerial((long)MocoProtocolHandshakeSuccessfulResponse);
+	Serial.write(MocoProtocolHandshakeSuccessfulResponse);
+	SerialTools.writeDummyBytesToSerial(3);
 }
 
-void MocoJoCommunication::writeRequestForNextAxisPositionToComputer(int axisID)
+void MocoJoCommunication::writeRequestForNextFrameToComputer(int axisID)
 {
 	Serial.write(MocoProtocolAdvancePlaybackRequestType); 
 	Serial.write(axisID);
