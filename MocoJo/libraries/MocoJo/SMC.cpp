@@ -34,7 +34,7 @@ void SMC::setMotorSpeed(int speed){
 	
 }
 
-int SMC::getVariable(variableID){
+int SMC::getVariable(int variableID){
 	Serial1.write(SMCProtocolGetVariable);
 	Serial1.write(variableID);
 	
