@@ -8,9 +8,6 @@
 #define FRAMERATE 50
 
 //DECLARATIONS
-Servo servo;
-int servo_position = 0;
-int servo_resolution = 180;
 
 //---------------GENERAL------------------
 const int ledPin = 13; //LED connected to digital pin 13
@@ -73,19 +70,12 @@ void setup()
 	digitalWrite(ledPin2, LOW);
 	pinMode(MCU_VirtualShutter_SyncOut_Pin, OUTPUT);
 	setVirtualShutter(HIGH);
-	
-	pinMode(controllerTiltEncoder_clockPin, OUTPUT); // SCK
-	pinMode(controllerTiltEncoder_CSnPin, OUTPUT); // CSn -- has to toggle high and low to signal chip to start data transfer
-	pinMode(controllerTiltEncoder_inputPin, INPUT); // SDA
-	servo.attach(9);
-	servo.writeMicroseconds(servo_position);
 }
 
 void loop()
-{
-	//make offsets for each axis's controller so that we don't make the servos jump
+{	
 	if (firstBoot){
-		axis_TargetOffset = controllerTiltEncoder_Position - axis_Position;
+		//do first boot things
 		firstBoot = false;
 	}
 	
@@ -99,11 +89,11 @@ void loop()
 void doGeneralDuties(){
 	
 	//update pan/tilt wheels and any other inputs
-	updateControllerTiltEncoder(); 
 	
-	//refresh positions
+	
+	//send position data to MCUs
 	if (!isPlayback){
-		axis_Target = controllerTiltEncoder_Position - axis_TargetOffset;
+		
 	}
 }
 
@@ -200,20 +190,18 @@ void processInstructionFromComputer(byte instruction){
 			freshRequestSentForNextAxisPositionToComputer = false;
 			while(Serial.available() < 5){}
 			//int axisID = Serial.read();
-			addToAxisTargetBuffer(Serial.read(), SerialTools::readLongFromSerial());
+			addToAxisTargetBuffer(Serial.read(), SerialTools::readLongFromSerial(Serial));
 			//Logger::writeDebugString(String(millis() - start, DEC), true);
 			break;
 
 		case MocoProtocolSeekPositionDataHeader:
 			while(Serial.available() < 5){}
 			if (isPlayback){
-				SerialTools::readDummyBytesFromSerial(5);
+				SerialTools::readDummyBytesFromSerial(Serial, 5);
 				return;
 			}
 			Serial.read();//temp bogus axis
-			servo_position = SerialTools::readLongFromSerial();
-			servo.write(servo_position);
-			Logger::writeDebugString("Position Received: " + String(servo_position, DEC), true);
+			SerialTools::readLongFromSerial(Serial); //this is the position
 			break;
 
 		default:
@@ -257,7 +245,7 @@ void doPlaybackFromComputer()
 	
 	while(axis_TargetBuffer_AmountFreshData<bufferSize && isPlayback && finalFrame == -1){
 		if(!freshRequestSentForNextAxisPositionToComputer){
-			MocoJoCommunication::writeRequestForNextAxisPositionToComputer(MocoAxisCameraTilt);
+			MocoJoCommunication::writeRequestForNextFrameToComputer();
 			freshRequestSentForNextAxisPositionToComputer = true;
 			start = millis();
 		}
@@ -290,7 +278,7 @@ void doPlaybackFromComputer()
 		if (axis_TargetBuffer_AmountFreshData < bufferSize-1 && axis_TargetBuffer_currentBufferPosition%bufferSize != axis_TargetBuffer_currentPosition%bufferSize){
 			//Logger::writeDebugString("buffer " + String(axis_TargetBuffer_currentBufferPosition, DEC) + ", current " + String(axis_TargetBuffer_currentPosition, DEC), false);
 			if(!freshRequestSentForNextAxisPositionToComputer){
-				MocoJoCommunication::writeRequestForNextAxisPositionToComputer(MocoAxisCameraTilt);
+				MocoJoCommunication::writeRequestForNextFrameToComputer();
 				freshRequestSentForNextAxisPositionToComputer = true;
 				//start = millis();
 			}
@@ -349,7 +337,6 @@ void updateAxisPositionsFromPlayback()
 	//Logger::writeDebugString(String(frameCounter, DEC), true);
 	
 	//axis_Target = axis_TargetBuffer[axis_TargetBuffer_currentPosition%bufferSize]; //effectively a virtual sync
-	servo.write(axis_TargetBuffer[axis_TargetBuffer_currentPosition%bufferSize]);
 	axis_TargetBuffer_currentPosition++;
 	axis_TargetBuffer_AmountFreshData--;
 	
@@ -366,7 +353,7 @@ void writeAxisPositionsToComputer()
 	//TEMP - eventually will interate through all online axes
 	Serial.write(MocoProtocolAxisPositionResponseType);//we are sending axis position data
 	Serial.write(MocoAxisCameraTilt);//we are saying this is the tilt
-	SerialTools::writeLongToSerial((long)servo_position);
+	SerialTools::writeLongToSerial(Serial, 0);
 
 }
 
@@ -379,7 +366,7 @@ void writeAxisResolutionsToComputer()
 	//TEMP:
 	Serial.write(MocoProtocolAxisResolutionResponseType);
 	Serial.write(MocoAxisCameraTilt);//we are saying this is the tilt
-	SerialTools::writeLongToSerial((long)servo_resolution);
+	SerialTools::writeLongToSerial(Serial, 0);
 	//-----
 }
 
