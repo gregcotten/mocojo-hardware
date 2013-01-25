@@ -4,42 +4,42 @@
 
 //All send/receive methods use MSB byte order
 
-void SerialTools::writeShortToSerial(int number){
-    Serial.write((uint8_t)((number >> 8) & 0XFF));
-	Serial.write((uint8_t)((number & 0XFF)));
+void SerialTools::writeShortToSerial(HardwareSerial stream, int number){
+    stream.write((uint8_t)((number >> 8) & 0XFF));
+	stream.write((uint8_t)((number & 0XFF)));
 }
 
-int SerialTools::readShortFromSerial(){
-    byte byte1 = Serial.read();
-    byte byte2 = Serial.read();
+int SerialTools::readShortFromSerial(HardwareSerial stream){
+    byte byte1 = stream.read();
+    byte byte2 = stream.read();
     return (byte1 << 8) + (byte2);
 }
 
-void SerialTools::writeLongToSerial(long number){
-	Serial.write((uint8_t)((number >> 24) & 0xFF));
-	Serial.write((uint8_t)((number >> 16) & 0xFF));
-	Serial.write((uint8_t)((number >> 8) & 0XFF));
-	Serial.write((uint8_t)((number & 0XFF)));
+void SerialTools::writeLongToSerial(HardwareSerial stream, long number){
+	stream.write((uint8_t)((number >> 24) & 0xFF));
+	stream.write((uint8_t)((number >> 16) & 0xFF));
+	stream.write((uint8_t)((number >> 8) & 0XFF));
+	stream.write((uint8_t)((number & 0XFF)));
 }
 
-long SerialTools::readLongFromSerial(){
-	byte byte1 = Serial.read();
-	byte byte2 = Serial.read();
-	byte byte3 = Serial.read();
-	byte byte4 = Serial.read();
+long SerialTools::readLongFromSerial(HardwareSerial stream){
+	byte byte1 = stream.read();
+	byte byte2 = stream.read();
+	byte byte3 = stream.read();
+	byte byte4 = stream.read();
 	
 	return ((byte1 << 24) + (byte2 << 16) + (byte3 << 8) + (byte4));
 }
 
-void SerialTools::writeDummyBytesToSerial(int numberOfDummyBytes){
+void SerialTools::writeDummyBytesToSerial(HardwareSerial stream, int numberOfDummyBytes){
 	for (int i = 0; i < numberOfDummyBytes; i++){
-		Serial.write(1);
+		stream.write((uint8_t)1);
 	}
 }
 
-void SerialTools::readDummyBytesFromSerial(int numberOfDummyBytes){
+void SerialTools::readDummyBytesFromSerial(HardwareSerial stream, int numberOfDummyBytes){
 	for (int i = 0; i < numberOfDummyBytes; i++){
-		Serial.read();
+		stream.read();
 	}
 }
 

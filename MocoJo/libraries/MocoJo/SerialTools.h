@@ -5,12 +5,12 @@
 #include <WString.h>
 
 namespace SerialTools {
-	void writeShortToSerial(int number);    
-    int readShortFromSerial();
-	void writeLongToSerial(long number);
-	long readLongFromSerial();
-	void writeDummyBytesToSerial(int numberOfBytes);
-	void readDummyBytesFromSerial(int numberOfBytes);
+	void writeShortToSerial(HardwareSerial stream, int number);    
+    int readShortFromSerial(HardwareSerial stream);
+	void writeLongToSerial(HardwareSerial stream, long number);
+	long readLongFromSerial(HardwareSerial stream);
+	void writeDummyBytesToSerial(HardwareSerial stream, int numberOfBytes);
+	void readDummyBytesFromSerial(HardwareSerial stream, int numberOfBytes);
 }
 
 #endif
