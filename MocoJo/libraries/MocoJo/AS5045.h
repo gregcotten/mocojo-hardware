@@ -10,7 +10,7 @@ class AS5045{
 		void update();
 		int getRelativePosition();
 		long getAbsolutePosition();
-		void zeroOutAbsolutePosition();
+		void setAbsolutePosition(long desiredPosition);
 	private:
 		void checkErrors();
 		int _encoderDebug;

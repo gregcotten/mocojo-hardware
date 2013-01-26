@@ -45,7 +45,7 @@ AS5045::AS5045(int chipSelect, int clockpin, int input, int debug){
   update();
   _encoderRevolutionCount = 0; 
   //zero out so that absolute position is zero
-  zeroOutAbsolutePosition();
+  setAbsolutePosition(0);
 }
 
 int AS5045::getRelativePosition(){
@@ -56,8 +56,8 @@ long AS5045::getAbsolutePosition(){
 	return _encoderAbsolutePosition + _encoderAbsolutePositionOffset;
 }
 
-void AS5045::zeroOutAbsolutePosition(){
-  _encoderAbsolutePositionOffset = -_encoderAbsolutePosition;
+void AS5045::setAbsolutePosition(long desiredPosition){
+  _encoderAbsolutePositionOffset = desiredPosition - _encoderAbsolutePosition;
 }
 
 //Currently takes 110 microseconds to update @ chipKIT 96MHz
@@ -96,7 +96,7 @@ void AS5045::update(){
   }
   
 
-  _encoderAbsolutePosition = _encoderRelativePosition + 4095*_encoderRevolutionCount;
+  _encoderAbsolutePosition = _encoderRelativePosition + 4096*_encoderRevolutionCount;
   
   _encoderPreviousRelativePosition = _encoderRelativePosition;
   
