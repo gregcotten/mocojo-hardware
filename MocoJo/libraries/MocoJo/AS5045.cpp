@@ -82,16 +82,15 @@ void AS5045::update(){
   }
   //digitalWrite(ledPin, LOW); // signal end of transmission
   
-  _encoderRelativePosition = packeddata & relativePositionMask; // mask rightmost 6 digits of packeddata to zero, into angle.
+  _encoderRelativePosition = (packeddata & relativePositionMask) >> 6; // mask rightmost 6 digits of packeddata to zero, into angle. and shift 18-digit angle right 6 digits to form 12-digit value
 
-  _encoderRelativePosition = (_encoderRelativePosition >> 6); // shift 18-digit angle right 6 digits to form 12-digit value
   //Serial.println(controllerPanEncoder_AbsolutePosition,DEC);
   
   //detect a revolution!
-  if (_encoderPreviousRelativePosition > 3900 && _encoderRelativePosition < 100) { //it did a clockwise rev
+  if (_encoderPreviousRelativePosition > 3900 && _encoderRelativePosition < 195) { //it did a clockwise rev
     _encoderRevolutionCount++;
   } 
-  else if (_encoderPreviousRelativePosition < 100 && _encoderRelativePosition > 3900) { //it did a counter-clockwise rev
+  else if (_encoderPreviousRelativePosition < 195 && _encoderRelativePosition > 3900) { //it did a counter-clockwise rev
     _encoderRevolutionCount--;
   }
   
