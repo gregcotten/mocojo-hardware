@@ -11,11 +11,11 @@ int _encoderClockPin; //output to clock
 int _encoderInputPin; //read AS5045
 
 //Positional Data
-int _encoderResolution = 4095;
 int _encoderRelativePosition;
-long _encoderPreviousRelativePosition;
+int _encoderPreviousRelativePosition; //so we don't detect a revolution at the beginning
 long _encoderAbsolutePosition;
 int _encoderRevolutionCount;
+long _encoderAbsolutePositionOffset;
 
 //----------MAGNETIC ENCODER GENERAL-----------
 int inputstream = 0; //one bit read from pin
@@ -29,15 +29,23 @@ int OCF; //bit holding startup-valid bit
 int COF; //bit holding cordic DSP processing error data
 int LIN; //bit holding magnet field displacement error data
 int shortdelay = 1; // this is the microseconds of delay in the data clock
-int longdelay = 1; // this is the milliseconds between readings
 
 //----------------------------------------------
 
-AS5045::AS5045(int chipSelect, int clock, int input, int debug){
+AS5045::AS5045(int chipSelect, int clockpin, int input, int debug){
 	_encoderChipSelectPin = chipSelect;
-	_encoderClockPin = clock;
+	_encoderClockPin = clockpin;
 	_encoderInputPin = input;
 	_encoderDebug = debug;
+  pinMode(_encoderChipSelectPin, OUTPUT);
+  pinMode(_encoderClockPin, OUTPUT);
+  pinMode(_encoderInputPin, INPUT);
+
+  //catch that pesky fake revolution
+  update();
+  _encoderRevolutionCount = 0; 
+  //zero out so that absolute position is zero
+  zeroOutAbsolutePosition();
 }
 
 int AS5045::getRelativePosition(){
@@ -45,9 +53,14 @@ int AS5045::getRelativePosition(){
 }
 
 long AS5045::getAbsolutePosition(){
-	return _encoderAbsolutePosition;
+	return _encoderAbsolutePosition + _encoderAbsolutePositionOffset;
 }
 
+void AS5045::zeroOutAbsolutePosition(){
+  _encoderAbsolutePositionOffset = -_encoderAbsolutePosition;
+}
+
+//Currently takes 110 microseconds to update @ chipKIT 96MHz
 void AS5045::update(){
 	digitalWrite(_encoderChipSelectPin, HIGH); // CSn high
   digitalWrite(_encoderClockPin, HIGH); // CLK high
@@ -67,7 +80,6 @@ void AS5045::update(){
     digitalWrite(_encoderClockPin, LOW);
     delayMicroseconds(shortdelay); // end of one clock cycle
   }
-
   //digitalWrite(ledPin, LOW); // signal end of transmission
   
   _encoderRelativePosition = packeddata & relativePositionMask; // mask rightmost 6 digits of packeddata to zero, into angle.
@@ -84,9 +96,19 @@ void AS5045::update(){
   }
   
 
+  _encoderAbsolutePosition = _encoderRelativePosition + 4095*_encoderRevolutionCount;
   
-  if (_encoderDebug)
-  {
+  _encoderPreviousRelativePosition = _encoderRelativePosition;
+  
+  packeddata = 0; // reset both variables to zero so they don't just accumulate
+
+  if (_encoderDebug == true){
+    checkErrors();
+  }
+
+}
+
+void AS5045::checkErrors(){
     statusbits = packeddata & statusmask;
     DECn = statusbits & 2; // goes high if magnet moved away from IC
     INCn = statusbits & 4; // goes high if magnet moved towards IC
@@ -94,7 +116,7 @@ void AS5045::update(){
     COF = statusbits & 16; // goes high for cordic overflow: data invalid
     OCF = statusbits & 32; // this is 1 when the chip startup is finished.
     if (DECn && INCn) { 
-    //Serial.println("magnet moved out of range"); 
+    Serial.println("magnet moved out of range"); 
     }
     else
     {
@@ -103,14 +125,5 @@ void AS5045::update(){
     }
     if (LIN) { Serial.println("linearity alarm: magnet misaligned? Data questionable."); }
     if (COF) { Serial.println("cordic overflow: magnet misaligned? Data invalid."); }
-  }
-
-  
-  
-  _encoderAbsolutePosition = _encoderRelativePosition + _encoderResolution*_encoderRevolutionCount;
-  
-  _encoderPreviousRelativePosition = _encoderRelativePosition;
-  
-  packeddata = 0; // reset both variables to zero so they don't just accumulate
 }
 

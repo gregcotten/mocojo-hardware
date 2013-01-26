@@ -10,8 +10,9 @@ class AS5045{
 		void update();
 		int getRelativePosition();
 		long getAbsolutePosition();
-
+		void zeroOutAbsolutePosition();
 	private:
+		void checkErrors();
 		int _encoderDebug;
 		//Pins
 		int _encoderChipSelectPin; //output to chip select
@@ -19,11 +20,11 @@ class AS5045{
 		int _encoderInputPin; //read AS5045
 		
 		//Positional Data
-		int _encoderResolution;
 		int _encoderRelativePosition;
-		long _encoderPreviousRelativePosition;
+		int _encoderPreviousRelativePosition;
 		long _encoderAbsolutePosition;
 		int _encoderRevolutionCount;
+		long _encoderAbsolutePositionOffset;
 
 		//Backend
 		int inputstream; //one bit read from pin
@@ -38,7 +39,6 @@ class AS5045{
 		int COF; //bit holding cordic DSP processing error data
 		int LIN; //bit holding magnet field displacement error data
 		int shortdelay; // this is the microseconds of delay in the data clock
-		int longdelay; // this is the milliseconds between readings
 		
 };
 #endif
