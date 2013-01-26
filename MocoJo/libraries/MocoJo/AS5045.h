@@ -6,7 +6,7 @@
 
 class AS5045{
 	public:
-		AS5045(int chipSelect, int clock, int input, int debug);
+		AS5045(int chipSelect, int clock, int input, float sensitivity, int debug);
 		void update();
 		int getRelativePosition();
 		long getAbsolutePosition();
@@ -25,6 +25,7 @@ class AS5045{
 		long _encoderAbsolutePosition;
 		int _encoderRevolutionCount;
 		long _encoderAbsolutePositionOffset;
+		float _encoderSensitivity;
 
 		//Backend
 		int inputstream; //one bit read from pin

@@ -16,6 +16,7 @@ int _encoderPreviousRelativePosition; //so we don't detect a revolution at the b
 long _encoderAbsolutePosition;
 int _encoderRevolutionCount;
 long _encoderAbsolutePositionOffset;
+float _encoderSensitivity;
 
 //----------MAGNETIC ENCODER GENERAL-----------
 int inputstream = 0; //one bit read from pin
@@ -32,11 +33,14 @@ int shortdelay = 1; // this is the microseconds of delay in the data clock
 
 //----------------------------------------------
 
-AS5045::AS5045(int chipSelect, int clockpin, int input, int debug){
+AS5045::AS5045(int chipSelect, int clockpin, int input, float sensitivity, int debug){
 	_encoderChipSelectPin = chipSelect;
 	_encoderClockPin = clockpin;
 	_encoderInputPin = input;
 	_encoderDebug = debug;
+  _encoderSensitivity = sensitivity;
+
+  //set pins!
   pinMode(_encoderChipSelectPin, OUTPUT);
   pinMode(_encoderClockPin, OUTPUT);
   pinMode(_encoderInputPin, INPUT);
@@ -94,12 +98,17 @@ void AS5045::update(){
     _encoderRevolutionCount--;
   }
   
-
-  _encoderAbsolutePosition = _encoderRelativePosition + 4096*_encoderRevolutionCount;
+  if(sensitivity != 1.0){
+    _encoderAbsolutePosition = (float)(_encoderRelativePosition + 4096*_encoderRevolutionCount) * _encoderResolution;  
+  }
+  else{
+    _encoderAbsolutePosition = _encoderRelativePosition + 4096*_encoderRevolutionCount;   
+  }
+  
   
   _encoderPreviousRelativePosition = _encoderRelativePosition;
   
-  packeddata = 0; // reset both variables to zero so they don't just accumulate
+  packeddata = 0; // reset to zero so it doesn't accumulate ???
 
   if (_encoderDebug == true){
     checkErrors();
