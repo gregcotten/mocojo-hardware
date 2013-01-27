@@ -98,8 +98,8 @@ void AS5045::update(){
     _encoderRevolutionCount--;
   }
   
-  if(sensitivity != 1.0){
-    _encoderAbsolutePosition = (float)(_encoderRelativePosition + 4096*_encoderRevolutionCount) * _encoderResolution;  
+  if(_encoderSensitivity != 1.0){
+    _encoderAbsolutePosition = (float)(_encoderRelativePosition + 4096*_encoderRevolutionCount) * _encoderSensitivity;  
   }
   else{
     _encoderAbsolutePosition = _encoderRelativePosition + 4096*_encoderRevolutionCount;   
