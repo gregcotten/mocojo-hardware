@@ -11,6 +11,7 @@ class LongBuffer{
 		int amountFresh();
 		void addLong(long data);
 		long nextLong();
+		long peek();
 		void reset();
 	private:
 		long _buffer[];

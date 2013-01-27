@@ -39,3 +39,7 @@ long LongBuffer::nextLong(){
 	return data;
 }
 
+long LongBuffer::peek(){
+	return _buffer[_currentPosition];
+}
+
