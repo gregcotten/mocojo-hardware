@@ -1,7 +1,7 @@
 #include <LongBuffer.h>
 
 
-LongBuffer buffer(100);
+LongBuffer buffer(3);
 
 void setup(){
 

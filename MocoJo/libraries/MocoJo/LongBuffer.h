@@ -7,9 +7,11 @@
 class LongBuffer{
 	public:
 		LongBuffer(int bufferSize);
+		bool isFull();
 		int amountFresh();
-		int addLong();
-		int nextLong();
+		void addLong(long data);
+		long nextLong();
+		void reset();
 	private:
 		long _buffer[];
 
