@@ -2,7 +2,9 @@
 #include <MocoProtocolConstants.h>
 #include <SerialTools.h>
 #include <MocoJoServoProtocol.h>
-#include <Logger.h>
+#include <PID_v1.h>
+#include <SMC.h>
+#include <AS5045.h>
 
 //---------------GENERAL------------------
 const int ledPin = 13; //LED connected to digital pin 13
@@ -22,7 +24,6 @@ long loopCount = 0; //for timing debug
 
 //---------------Moco LOGIC--------------------
 boolean firstBoot = true;
-const boolean isSlave = true;
 boolean isInitialized = false;
 boolean isStreaming = false;
 boolean isPlayback = false;
@@ -32,24 +33,70 @@ const int MCU_VirtualShutter_SyncIn_Pin = 10; //HIGH is shutter off cycle, LOW i
 //----------------------------------------------
 
 //--------------Servo Data-----------------------
+const int servoID = MocoAxisJibLift;
 long servoCurrentPosition = 0;
 long servoResolution = 8*4095;
 long servoTargetPosition = 0;
+
+long servoTargetSpeed = 0;
+//-----------------------------------------------
+
+
+//--------------Peripherals-----------------------
+AS5045 servoEncoder(4,5,6, 1.0, false);
+SMC motorController(&Serial2);
+//-----------------------------------------------
 
 
 void setup(){
 	Serial.begin(MocoJoServoBaudRate);
 	Serial.flush();
 	
-	Logger::setDebugMode(false, true);
-	
 	pinMode(ledPin, OUTPUT); // visual signal of I/O to chip
 	digitalWrite(ledPin, LOW);
 	pinMode(ledPin2, OUTPUT); // visual signal of I/O to chip
 	digitalWrite(ledPin2, LOW);
 	pinMode(MCU_VirtualShutter_SyncIn_Pin, INPUT);
+
+	motorController.initialize();
 }
 
 void loop(){
+	if (firstBoot){
+		//do first boot things
+		firstBoot = false;
+	}
+	
+	doSerialDuties();
+	doGeneralDuties();
+}
 
+/*
+	General duties are anything that needs to happen with some sort of immediacy (updating positions, controllers, etc.).
+*/
+void doGeneralDuties(){
+	servoEncoder.update();
+	servoCurrentPosition = servoEncoder.getAbsolutePosition();
+	if (!isPlayback){
+		
+	}
+}
+
+/*
+	All serial communication is interpreted here.
+*/
+void doSerialDuties()
+{
+	if(Serial1.available()){
+		processInstructionFromMCU(Serial1.read());
+	}
+}
+
+void processInstructionFromMCU(byte ID){
+	SerialTools::blockUntilBytesArrive(Serial1, 5);
+	if(ID != servoID){
+		SerialTools::readDummyBytes(Serial1, 5);
+	}
+	else{
+	}
 }
