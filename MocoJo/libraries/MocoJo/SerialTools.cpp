@@ -43,3 +43,7 @@ void SerialTools::readDummyBytesFromSerial(HardwareSerial stream, int numberOfDu
 	}
 }
 
+void SerialTools::blockUntilBytesArrive(HardwareSerial stream, int numberOfBytes){
+	while(stream.available() < numberOfBytes){}
+}
+
