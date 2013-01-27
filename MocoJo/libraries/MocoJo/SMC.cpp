@@ -5,7 +5,9 @@
 #include <WString.h>
 
 
-SMC::SMC(){
+
+SMC::SMC(HardwareSerial* serial){
+	_serial = serial;
 
 }
 

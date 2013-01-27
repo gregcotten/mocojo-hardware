@@ -6,12 +6,13 @@
 
 class SMC{
 	public:
-		SMC();
+		SMC(HardwareSerial* serial);
 		void initialize();
 		void setMotorSpeed(int speed);
 		void exitSafeStart();
 	private:
 		int getVariable(int variableID);
+		HardwareSerial* _serial; //pointer for what serial to use
 		
 };
 #endif
