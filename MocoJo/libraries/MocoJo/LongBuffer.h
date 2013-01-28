@@ -2,7 +2,6 @@
 #define LongBuffer_h
 
 #include <WProgram.h>
-#include <WString.h>
 
 class LongBuffer{
 	public:
