@@ -25,7 +25,7 @@ long loopCount = 0; //for timing debug
 //---------------Moco LOGIC--------------------
 boolean firstBoot = true;
 boolean isInitialized = false;
-boolean isStreaming = false;
+boolean isStopped = true;
 boolean isPlayback = false;
 
 //--------------Moco GPIO------------------------
@@ -38,7 +38,8 @@ long servoCurrentPosition = 0;
 long servoResolution = 8*4095;
 long servoTargetPosition = 0;
 
-long servoTargetSpeed = 0;
+
+int servoTargetSpeed = 0;
 const int servoMaxSpeed = 3200;
 
 PID servoPositionPID(&servoCurrentPosition, &servoTargetSpeed, &servoTargetPosition,1,0,0, DIRECT);
@@ -72,20 +73,21 @@ void loop(){
 		//do first boot things
 		firstBoot = false;
 	}
-	
+
+	doPIDDuties();
 	doSerialDuties();
-	doGeneralDuties();
+//	doGeneralDuties();
 }
 
 void initialize(){
 	motorController.initialize();
+	isInitialized = true;
 }
 
 /*
 	General duties are anything that needs to happen with some sort of immediacy (updating positions, controllers, etc.).
 */
 void doGeneralDuties(){
-	doPIDDuties();
 	if (!isPlayback){
 		
 	}
@@ -94,8 +96,9 @@ void doGeneralDuties(){
 void doPIDDuties(){
 	servoEncoder.update();
 	servoCurrentPosition = servoEncoder.getAbsolutePosition();
-	servoPositionPID.compute()
-	motorController.setMotorSpeed(servoTargetSpeed);
+	if (!isStopped && servoPositionPID.compute()){
+		motorController.setMotorSpeed(servoTargetSpeed);
+	}
 }
 
 /*
@@ -114,6 +117,44 @@ void processInstructionFromMCU(byte ID){
 		SerialTools::readDummyBytes(Serial1, 5);
 		return;
 	}
-	else{
+
+	switch(Serial1.read()){
+		case MocoJoServoHandshakeRequest:
+
+			break;
+		case MocoJoServoStopEverything:
+
+			break;
+		case MocoJoServoExitSafeStart:
+
+			break;
+
+		default:
+			SerialTools::readDummyBytes(Serial1, 4);
+			break;
+
 	}
 }
+
+void exitSafeStart(){
+	motorController.exitSafeStart();
+	isStopped = false;
+}
+
+void stopEverything(){
+	motorController.stopMotor();
+	isStopped = true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
