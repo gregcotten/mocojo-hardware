@@ -10,6 +10,7 @@ class SMC{
 		void initialize();
 		void setMotorSpeed(int speed);
 		void exitSafeStart();
+		void stopMotor();
 	private:
 		int getVariable(int variableID);
 		HardwareSerial* _serial; //pointer for what serial to use

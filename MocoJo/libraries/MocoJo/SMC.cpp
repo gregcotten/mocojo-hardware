@@ -21,6 +21,10 @@ void SMC::exitSafeStart(){
 	_serial.write(SMCProtocolExitSafeStart);
 }
 
+void SMC::stopMotor(){
+	_serial.write(SMCProtocolStopMotor);
+}
+
 
 //speed can be [-3200, 3200]
 void SMC::setMotorSpeed(int speed){
