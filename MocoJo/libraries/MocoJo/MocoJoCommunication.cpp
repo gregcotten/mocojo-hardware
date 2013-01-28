@@ -1,6 +1,5 @@
 #include <MocoJoCommunication.h>
 #include <SerialTools.h>
-#include <wiring.h>
 #include <WProgram.h>
 #include <MocoProtocolConstants.h>
 
