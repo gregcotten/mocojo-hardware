@@ -33,7 +33,7 @@ int shortdelay = 1; // this is the microseconds of delay in the data clock
 
 //----------------------------------------------
 
-AS5045::AS5045(int chipSelect, int clockpin, int input, float sensitivity, int debug){
+AS5045::AS5045(int chipSelect, int clockpin, int input, long startingPosition, float sensitivity, int debug){
 	_encoderChipSelectPin = chipSelect;
 	_encoderClockPin = clockpin;
 	_encoderInputPin = input;
@@ -49,7 +49,7 @@ AS5045::AS5045(int chipSelect, int clockpin, int input, float sensitivity, int d
   update();
   _encoderRevolutionCount = 0; 
   //zero out so that absolute position is zero
-  setAbsolutePosition(0);
+  setAbsolutePosition(startingPosition);
 }
 
 int AS5045::getRelativePosition(){

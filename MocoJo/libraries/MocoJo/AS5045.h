@@ -6,7 +6,7 @@
 
 class AS5045{
 	public:
-		AS5045(int chipSelect, int clock, int input, float sensitivity, int debug);
+		AS5045(int chipSelect, int clock, int input, long startingPosition, float sensitivity, int debug);
 		void update();
 		int getRelativePosition();
 		long getAbsolutePosition();
