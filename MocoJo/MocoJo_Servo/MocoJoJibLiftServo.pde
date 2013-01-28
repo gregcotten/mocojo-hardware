@@ -32,13 +32,15 @@ boolean isPlayback = false;
 const int MCU_VirtualShutter_SyncIn_Pin = 10; //HIGH is shutter off cycle, LOW is shutter on cycle
 //----------------------------------------------
 
-//--------------Servo Data-----------------------
+//--------------Servo Stuff-----------------------
 const int servoID = MocoAxisJibLift;
 long servoCurrentPosition = 0;
 long servoResolution = 8*4095;
 long servoTargetPosition = 0;
 
 long servoTargetSpeed = 0;
+
+PID servoPositionPID();
 //-----------------------------------------------
 
 
@@ -96,6 +98,7 @@ void processInstructionFromMCU(byte ID){
 	SerialTools::blockUntilBytesArrive(Serial1, 5);
 	if(ID != servoID){
 		SerialTools::readDummyBytes(Serial1, 5);
+		return;
 	}
 	else{
 	}
