@@ -120,7 +120,6 @@ void processInstructionFromMCU(byte ID){
 
 	switch(Serial1.read()){
 		case MocoJoServoHandshakeRequest:
-
 			break;
 		case MocoJoServoStopEverything:
 
