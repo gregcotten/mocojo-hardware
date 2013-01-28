@@ -39,13 +39,15 @@ long servoResolution = 8*4095;
 long servoTargetPosition = 0;
 
 long servoTargetSpeed = 0;
+const int servoMaxSpeed = 3200;
 
-PID servoPositionPID();
+PID servoPositionPID(&servoCurrentPosition, &servoTargetSpeed, &servoTargetPosition,1,0,0, DIRECT);
+int servoPositionPIDSampleTimeMillis = 1;
 //-----------------------------------------------
 
 
 //--------------Peripherals-----------------------
-AS5045 servoEncoder(4,5,6, 1.0, false);
+AS5045 servoEncoder(4,5,6, 0, 1.0, false);
 SMC motorController(&Serial2);
 //-----------------------------------------------
 
@@ -58,9 +60,11 @@ void setup(){
 	digitalWrite(ledPin, LOW);
 	pinMode(ledPin2, OUTPUT); // visual signal of I/O to chip
 	digitalWrite(ledPin2, LOW);
+	
 	pinMode(MCU_VirtualShutter_SyncIn_Pin, INPUT);
 
-	motorController.initialize();
+	servoPositionPID.setOutputLimits(-servoMaxSpeed, servoMaxSpeed);
+	servoPositionPID.setSampleTime(servoPositionPIDSampleTimeMillis);
 }
 
 void loop(){
@@ -73,15 +77,25 @@ void loop(){
 	doGeneralDuties();
 }
 
+void initialize(){
+	motorController.initialize();
+}
+
 /*
 	General duties are anything that needs to happen with some sort of immediacy (updating positions, controllers, etc.).
 */
 void doGeneralDuties(){
-	servoEncoder.update();
-	servoCurrentPosition = servoEncoder.getAbsolutePosition();
+	doPIDDuties();
 	if (!isPlayback){
 		
 	}
+}
+
+void doPIDDuties(){
+	servoEncoder.update();
+	servoCurrentPosition = servoEncoder.getAbsolutePosition();
+	servoPositionPID.compute()
+	motorController.setMotorSpeed(servoTargetSpeed);
 }
 
 /*
