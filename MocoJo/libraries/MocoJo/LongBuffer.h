@@ -14,7 +14,7 @@ class LongBuffer{
 		long peek();
 		void reset();
 	private:
-		long _buffer[];
+		long* _buffer;
 
 		int _bufferSize;
 		int _currentPosition;

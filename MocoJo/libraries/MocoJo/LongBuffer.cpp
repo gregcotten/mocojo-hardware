@@ -8,7 +8,7 @@ int _amountFresh;
 
 LongBuffer::LongBuffer(int bufferSize){
 	_bufferSize = bufferSize;
-	_buffer[_bufferSize];
+	_buffer = (long*)malloc(sizeof(long)*bufferSize);
 	reset();
 }
 
@@ -27,6 +27,7 @@ void LongBuffer::reset(){
 }
 
 void LongBuffer::addLong(long data){
+	Serial.println("adding: " + String(data, DEC));
 	_buffer[_currentBufferPosition] = data;
 	_currentBufferPosition = (_currentBufferPosition + 1) % _bufferSize;
 	_amountFresh++;
@@ -34,8 +35,10 @@ void LongBuffer::addLong(long data){
 
 long LongBuffer::nextLong(){
 	long data = _buffer[_currentPosition];
-	_currentPosition == (_currentPosition + 1) % _bufferSize;
+	Serial.println("current pos: " + String(_currentPosition, DEC));
+	_currentPosition = (_currentPosition + 1) % _bufferSize;
 	_amountFresh--;
+
 	return data;
 }
 
