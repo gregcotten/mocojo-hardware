@@ -60,7 +60,6 @@ long axis_TargetBuffer_currentBufferPosition = 0;
 void setup()
 {
 	Serial.begin(MocoProtocolBaudRate);
-	Serial.flush();
 	
 	Logger::setDebugMode(false, true);
 	
@@ -366,7 +365,7 @@ void writeAxisResolutionsToComputer()
 	//TEMP:
 	Serial.write(MocoProtocolAxisResolutionResponseType);
 	Serial.write(MocoAxisCameraTilt);//we are saying this is the tilt
-	SerialTools::writeLongToSerial(Serial, 0);
+	SerialTools::writeLongToSerial(Serial, 100);
 	//-----
 }
 
