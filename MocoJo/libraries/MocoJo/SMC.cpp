@@ -12,38 +12,40 @@ SMC::SMC(HardwareSerial* serial){
 }
 
 void SMC::initialize(){
-	Serial1.begin(SMCProtocolBaudRate);
+	_serial.begin(SMCProtocolBaudRate);
 	delay(1);
-	Serial1.write(0xAA); //SMC needs to establish the baud rate
+	_serial.write(0xAA); //SMC needs to establish the baud rate
 }
 
 void SMC::exitSafeStart(){
-	Serial1.write(SMCProtocolExitSafeStart);
+	_serial.write(SMCProtocolExitSafeStart);
 }
 
+
+//speed can be [-3200, 3200]
 void SMC::setMotorSpeed(int speed){
 
 	if (speed >= 0){
-		Serial1.write(SMCProtocolSetMotorForward);
+		_serial.write(SMCProtocolSetMotorForward);
 	}
 	else {
-		Serial1.write(SMCProtocolSetMotorReverse);
+		_serial.write(SMCProtocolSetMotorReverse);
 		speed = -speed;
 	}
 
-	Serial1.write(speed % 32); //speed byte 1
-	Serial1.write(speed >> 5); //speed byte 2
+	_serial.write(speed % 32); //speed byte 1
+	_serial.write(speed >> 5); //speed byte 2
 	
 }
 
 int SMC::getVariable(int variableID){
-	Serial1.write(SMCProtocolGetVariable);
-	Serial1.write(variableID);
+	_serial.write(SMCProtocolGetVariable);
+	_serial.write(variableID);
 	
 	//wait for the response to arrive!
-	while(Serial1.available() < 2){}
+	while(_serial.available() < 2){}
 	
-	int lowByte = Serial1.read();
-	int highByte = Serial1.read();
+	int lowByte = _serial.read();
+	int highByte = _serial.read();
 	return lowByte + 256*highByte;
 }
