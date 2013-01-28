@@ -6,7 +6,7 @@
 
 class SMC{
 	public:
-		SMC(HardwareSerial* serial);
+		SMC(HardwareSerial &serial);
 		void initialize();
 		void setMotorSpeed(int speed);
 		void exitSafeStart();
