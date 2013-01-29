@@ -14,8 +14,6 @@ enum{
 	MocoJoServoStopPlayback = 3,
 	MocoJoServoStopEverything = 4,
 	MocoJoServoExitSafeStart = 5,
-	MocoJoServoStartPlayback = 20,
-	MocoJoServoStopPlayback = 21,
 	MocoJoServoDidHoneToFirstPosition = 22
 
 };
@@ -31,7 +29,7 @@ enum{
 
 enum{
 	MocoJoServoSetTargetPosition = 9,
-	MocoJoServoSetTargetPositionForNextSync = 10,
+	MocoJoServoAddTargetPositionToBuffer = 10,
 	MocoJoServoSetMaxSpeed = 11
 };
 
