@@ -8,6 +8,8 @@ namespace MocoJoServoCommunication {
 	
 	void writeCurrentPositionToMCU(HardwareSerial serial, int ID, long currentPosition);
 	void writePositionAtLastSyncToMCU(HardwareSerial serial, int ID, long positionAtLastSync);
+
+	void writeMocoJoServoDidHoneToFirstPosition(HardwareSerial serial, int ID);
 }
 
 #endif

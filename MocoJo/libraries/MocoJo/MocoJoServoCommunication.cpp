@@ -18,3 +18,9 @@ void MocoJoServoCommunication::writePositionAtLastSyncToMCU(HardwareSerial seria
 	serial.write(MocoJoServoPositionAtLastSync);
 	SerialTools::writeLongToSerial(serial, positionAtLastSync);
 }
+
+void MocoJoServoCommunication::writeMocoJoServoDidHoneToFirstPosition(HardwareSerial serial, int ID){
+	serial.write(ID);
+	serial.write(MocoJoServoDidHoneToFirstPosition);
+	SerialTools::writeDummyBytesToSerial(serial, 4);
+}
