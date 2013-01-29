@@ -69,7 +69,10 @@ void loop(){
 		firstBoot = false;
 	}
 
-	doPIDDuties();
+	if (isInitialized){
+		doPIDDuties();	
+	}
+	
 	doSerialDuties();
 //	doGeneralDuties();
 }
@@ -91,13 +94,17 @@ void doGeneralDuties(){
 }
 
 void doPIDDuties(){
-	servoEncoder.update();
+	//not hooked up to real motor and encoder so don't do this yet - we'll just emulate it!
+	//servoEncoder.update();
 	//servoCurrentPosition = servoEncoder.getAbsolutePosition();
+
+	//until we're hooked up for real let's pretend the PID is doing a GREAT job.
+	servoCurrentPosition = servoTargetPosition;
+	
 	if (!isStopped && servoPositionPID.compute()){
 		motorController.setMotorSpeed(servoTargetSpeed);
 	}
-	//until we're hooked up for real let's pretend the PID is doing a GREAT job.
-	servoCurrentPosition = servoTargetPosition;
+	
 }
 
 /*
