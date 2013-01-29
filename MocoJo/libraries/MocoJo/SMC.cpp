@@ -12,7 +12,7 @@ SMC::SMC(HardwareSerial &serial){
 }
 
 void SMC::initialize(){
-	_serial->begin(SMCProtocolBaudRate);
+	//_serial->begin(SMCProtocolBaudRate);
 	delay(1);
 	_serial->write(0xAA); //SMC needs to establish the baud rate
 }
