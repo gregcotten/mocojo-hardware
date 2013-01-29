@@ -113,7 +113,7 @@ void doPIDDuties(){
 void doSerialDuties()
 {
 	if(Serial1.available() >= 6){
-		Serial.println("Packet received");
+		//Serial.println("Packet received");
 		processInstructionFromMCU();
 	}
 }
@@ -178,11 +178,11 @@ void stopPlayback(){
 }
 
 void processInstructionFromMCU(){
-	Serial.println("read ID");
+	//Serial.println("read ID");
 	byte ID = Serial1.read();
 
 	if(ID != servoID){
-		Serial.println("wrong ID");
+	//	Serial.println("wrong ID");
 		SerialTools::readDummyBytesFromSerial(Serial1, 5);
 		Serial.println(Serial1.available());
 		return;
@@ -190,6 +190,8 @@ void processInstructionFromMCU(){
 	
 	byte instruction = Serial1.read();
 	long data = SerialTools::readLongFromSerial(Serial1);
+	//Serial.println("instruction: " + String(instruction, DEC));
+	//Serial.println("data: " + String(data, DEC));
 	switch(instruction){
 		
 		//Initialization:
@@ -199,7 +201,6 @@ void processInstructionFromMCU(){
 
 		case MocoJoServoInitializeRequest:
 			initialize();
-
 			break;
 	
 		//Safety Precautions:
