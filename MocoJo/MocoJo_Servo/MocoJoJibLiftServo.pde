@@ -4,6 +4,7 @@
 #include <MocoJoServoProtocol.h>
 #include <MocoJoServoCommunication.h>
 #include <PID_v1.h>
+#include <LongBuffer.h>
 #include <SMC.h>
 #include <AS5045.h>
 
@@ -18,6 +19,8 @@ boolean isInitialized = false;
 boolean isStopped = true;
 boolean isPlayback = false;
 
+long frameCounter = 0; //local use
+
 //--------------Moco GPIO------------------------
 const int MCU_VirtualShutter_SyncIn_Pin = 10; //HIGH is shutter off cycle, LOW is shutter on cycle
 //----------------------------------------------
@@ -29,7 +32,7 @@ long servoPositionAtLastSync = 0;
 long servoResolution = 8*4095;
 
 long servoTargetPosition = 0;
-long servoTargetPositionForNextSync = 0; //for playback purposes
+LongBuffer servoTargetPositionBuffer(100);
 
 
 int servoTargetSpeed = 0;
@@ -90,10 +93,12 @@ void doGeneralDuties(){
 
 void doPIDDuties(){
 	servoEncoder.update();
-	servoCurrentPosition = servoEncoder.getAbsolutePosition();
+	//servoCurrentPosition = servoEncoder.getAbsolutePosition();
 	if (!isStopped && servoPositionPID.compute()){
 		motorController.setMotorSpeed(servoTargetSpeed);
 	}
+	//until we're hooked up for real let's pretend the PID is doing a GREAT job.
+	servoCurrentPosition = servoTargetPosition;
 }
 
 /*
@@ -107,9 +112,63 @@ void doSerialDuties()
 }
 
 void syncInterrupt(){
+	servoPositionAtLastSync = servoCurrentPosition;
 	if (isPlayback){
-		
+		if(servoTargetPositionBuffer.amountFresh() > 0){
+			servoTargetPosition = servoTargetPositionBuffer.nextLong();
+			return;
+		}
+		else{
+			stopPlayback();
+			Serial.println("Target Buffer overrun or playback stopped @ frame " + String(frameCounter));
+		}
 	}
+}
+
+void exitSafeStart(){
+	motorController.exitSafeStart();
+	isStopped = false;
+}
+
+void stopEverything(){
+	isPlayback = false;
+	motorController.stopMotor();
+	isStopped = true;
+	resetPlaybackParameters();
+}
+
+void honeToPosition(long honePosition){
+	servoTargetPosition = honePosition;
+
+	// **servoPositionPID - make sure to change parameters for slow mode!
+
+	while (servoCurrentPosition != servoTargetPosition){
+		doPIDDuties();
+		doSerialDuties();
+	}
+	delay(1000); //delay for a second just to be sure we've stopped.
+
+	// **servoPositionPID - make sure to change parameters for normal mode!
+}
+
+
+void startPlayback(long honePosition){
+	honeToPosition(honePosition);
+	MocoJoServoCommunication::writeMocoJoServoDidHoneToFirstPosition(Serial1, servoID);
+
+	Serial.println("Waiting for buffer to fill...");
+	while(!servoTargetPositionBuffer.isFull()){}
+	Serial.println("Buffer filled. Commencing playback by your command!");
+
+	isPlayback = true;
+}
+
+void stopPlayback(){
+	
+	isPlayback = false;
+	resetPlaybackParameters();
+	servoTargetPositionBuffer.reset();
+	frameCounter = 0;
 }
 
 void processInstructionFromMCU(){
@@ -119,8 +178,10 @@ void processInstructionFromMCU(){
 		SerialTools::readDummyBytesFromSerial(Serial1, 5);
 		return;
 	}
-
-	switch(Serial1.read()){
+	
+	byte instruction = Serial1.read();
+	
+	switch(instruction){
 		
 		//Initialization:
 		case MocoJoServoHandshakeRequest:
@@ -142,10 +203,10 @@ void processInstructionFromMCU(){
 
 		//Playback:
 		case MocoJoServoStartPlayback:
-			isPlayback = true;
+			startPlayback(SerialTools::readLongFromSerial(Serial1));
 			break;
 		case MocoJoServoStopPlayback;
-			isPlayback = false;
+			SerialTools::readDummyBytesFromSerial(Serial1, 4);
 			break;
 
 		//GETTERS:
@@ -165,9 +226,9 @@ void processInstructionFromMCU(){
 				SerialTools::readDummyBytesFromSerial(Serial1, 4);
 			}
 			break;
-		case MocoJoServoSetTargetPositionForNextSync:
+		case MocoJoServoAddTargetPositionToBuffer:
 			if(isPlayback){
-				servoNextTargetPosition = SerialTools::readLongFromSerial(Serial1);	
+				servoTargetPositionBuffer.addLong(SerialTools::readLongFromSerial(Serial1));	
 			}
 			else{
 				SerialTools::readDummyBytesFromSerial(Serial1, 4);
@@ -179,20 +240,11 @@ void processInstructionFromMCU(){
 			break;
 
 		default:
+			Serial.println("Instruction Invalid: " + String(instruction, DEC));
 			SerialTools::readDummyBytesFromSerial(Serial1, 4);
 			break;
 
 	}
-}
-
-void exitSafeStart(){
-	motorController.exitSafeStart();
-	isStopped = false;
-}
-
-void stopEverything(){
-	motorController.stopMotor();
-	isStopped = true;
 }
 
 
