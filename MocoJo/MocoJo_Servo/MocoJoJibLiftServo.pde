@@ -51,7 +51,6 @@ SMC motorController(&Serial2);
 
 void setup(){
 	Serial.begin(MocoJoServoBaudRate);
-	Serial.flush();
 	
 	pinMode(ledPin, OUTPUT); // visual signal of I/O to chip
 	digitalWrite(ledPin, LOW);
