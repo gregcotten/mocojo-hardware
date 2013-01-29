@@ -4,12 +4,12 @@
 #include <WProgram.h>
 
 namespace MocoJoServoCommunication {
-	void writeHandshakeSuccessToMCU(HardwareSerial serial);
+	void writeHandshakeSuccessToMCU(HardwareSerial &serial, int ID);
 	
-	void writeCurrentPositionToMCU(HardwareSerial serial, int ID, long currentPosition);
-	void writePositionAtLastSyncToMCU(HardwareSerial serial, int ID, long positionAtLastSync);
+	void writeCurrentPositionToMCU(HardwareSerial &serial, int ID, long currentPosition);
+	void writePositionAtLastSyncToMCU(HardwareSerial &serial, int ID, long positionAtLastSync);
 
-	void writeMocoJoServoDidHoneToFirstPosition(HardwareSerial serial, int ID);
+	void writeMocoJoServoDidHoneToFirstPosition(HardwareSerial &serial, int ID);
 }
 
 #endif
