@@ -1,4 +1,3 @@
-#include <Servo.h>
 #include <MocoProtocolConstants.h>
 #include <SerialTools.h>
 #include <MocoJoServoProtocol.h>
@@ -35,8 +34,8 @@ long servoTargetPosition = 0;
 LongBuffer servoTargetPositionBuffer(100);
 
 
-int servoTargetSpeed = 0;
-const int servoMaxSpeed = 3200;
+long servoTargetSpeed = 0;
+int servoMaxSpeed = 3200;
 
 PID servoPositionPID(&servoCurrentPosition, &servoTargetSpeed, &servoTargetPosition,1,0,0, DIRECT);
 int servoPositionPIDSampleTimeMillis = 1;
@@ -45,12 +44,13 @@ int servoPositionPIDSampleTimeMillis = 1;
 
 //--------------Peripherals-----------------------
 AS5045 servoEncoder(4,5,6, 0, 1.0, false);
-SMC motorController(&Serial2);
+SMC motorController(Serial); //change this to Serial2
 //-----------------------------------------------
 
 
 void setup(){
-	Serial.begin(MocoJoServoBaudRate);
+	Serial.begin(115200);
+	Serial1.begin(MocoJoServoBaudRate);
 	
 	pinMode(ledPin, OUTPUT); // visual signal of I/O to chip
 	digitalWrite(ledPin, LOW);
@@ -59,8 +59,8 @@ void setup(){
 	
 	pinMode(MCU_VirtualShutter_SyncIn_Pin, INPUT);
 
-	servoPositionPID.setOutputLimits(-servoMaxSpeed, servoMaxSpeed);
-	servoPositionPID.setSampleTime(servoPositionPIDSampleTimeMillis);
+	servoPositionPID.SetOutputLimits(-servoMaxSpeed, servoMaxSpeed);
+	servoPositionPID.SetSampleTime(servoPositionPIDSampleTimeMillis);
 }
 
 void loop(){
@@ -78,6 +78,7 @@ void loop(){
 }
 
 void initialize(){
+	digitalWrite(ledPin2, HIGH); //visual indication of initialization
 	motorController.initialize();
 	isInitialized = true;
 	attachInterrupt(MCU_VirtualShutter_SyncIn_Pin, syncInterrupt, RISING);
@@ -100,8 +101,7 @@ void doPIDDuties(){
 
 	//until we're hooked up for real let's pretend the PID is doing a GREAT job.
 	servoCurrentPosition = servoTargetPosition;
-	
-	if (!isStopped && servoPositionPID.compute()){
+	if (!isStopped && servoPositionPID.Compute()){
 		motorController.setMotorSpeed(servoTargetSpeed);
 	}
 	
@@ -113,6 +113,7 @@ void doPIDDuties(){
 void doSerialDuties()
 {
 	if(Serial1.available() >= 6){
+		Serial.println("Packet received");
 		processInstructionFromMCU();
 	}
 }
@@ -137,10 +138,9 @@ void exitSafeStart(){
 }
 
 void stopEverything(){
-	isPlayback = false;
+	stopPlayback();
 	motorController.stopMotor();
 	isStopped = true;
-	resetPlaybackParameters();
 }
 
 void honeToPosition(long honePosition){
@@ -172,53 +172,59 @@ void startPlayback(long honePosition){
 void stopPlayback(){
 	
 	isPlayback = false;
-	resetPlaybackParameters();
+	
 	servoTargetPositionBuffer.reset();
 	frameCounter = 0;
 }
 
 void processInstructionFromMCU(){
-	byte ID = Serial.read();
+	Serial.println("read ID");
+	byte ID = Serial1.read();
 
 	if(ID != servoID){
+		Serial.println("wrong ID");
 		SerialTools::readDummyBytesFromSerial(Serial1, 5);
+		Serial.println(Serial1.available());
 		return;
 	}
 	
 	byte instruction = Serial1.read();
-	
+	long data = SerialTools::readLongFromSerial(Serial1);
 	switch(instruction){
 		
 		//Initialization:
 		case MocoJoServoHandshakeRequest:
 			MocoJoServoCommunication::writeHandshakeSuccessToMCU(Serial1, servoID);
 			break;
+
 		case MocoJoServoInitializeRequest:
 			initialize();
-			break;
 
+			break;
+	
 		//Safety Precautions:
 		case MocoJoServoStopEverything:
 			stopEverything();
-			SerialTools::readDummyBytesFromSerial(Serial1, 4);
 			break;
+	
 		case MocoJoServoExitSafeStart:
 			exitSafeStart();
-			SerialTools::readDummyBytesFromSerial(Serial1, 4);
 			break;
 
 		//Playback:
 		case MocoJoServoStartPlayback:
-			startPlayback(SerialTools::readLongFromSerial(Serial1));
-			break;
-		case MocoJoServoStopPlayback;
-			SerialTools::readDummyBytesFromSerial(Serial1, 4);
+			startPlayback(data);
 			break;
 
+		case MocoJoServoStopPlayback:
+			stopPlayback();
+			break;
+		
 		//GETTERS:
 		case MocoJoServoGetCurrentPosition:
 			MocoJoServoCommunication::writeCurrentPositionToMCU(Serial1, servoID, servoCurrentPosition);
 			break;
+
 		case MocoJoServoGetPositionAtLastSync:
 			MocoJoServoCommunication::writePositionAtLastSyncToMCU(Serial1, servoID, servoPositionAtLastSync);
 			break;
@@ -226,30 +232,24 @@ void processInstructionFromMCU(){
 		//SETTERS:
 		case MocoJoServoSetTargetPosition:
 			if(!isPlayback){
-				servoTargetPosition = SerialTools::readLongFromSerial(Serial1);	
-			}
-			else{
-				SerialTools::readDummyBytesFromSerial(Serial1, 4);
+				servoTargetPosition = data;	
 			}
 			break;
+
 		case MocoJoServoAddTargetPositionToBuffer:
 			if(isPlayback){
-				servoTargetPositionBuffer.addLong(SerialTools::readLongFromSerial(Serial1));	
+				servoTargetPositionBuffer.addLong(data);	
 			}
-			else{
-				SerialTools::readDummyBytesFromSerial(Serial1, 4);
-			}
-			break;
-		case MocoJoServoSetMaxSpeed:
-			servoMaxSpeed = SerialTools::readLongFromSerial(Serial1);
-			servoPositionPID.setOutputLimits(-servoMaxSpeed, servoMaxSpeed);
 			break;
 
+		case MocoJoServoSetMaxSpeed:
+			servoMaxSpeed = data;
+			servoPositionPID.SetOutputLimits(-servoMaxSpeed, servoMaxSpeed);
+			break;
+		
 		default:
 			Serial.println("Instruction Invalid: " + String(instruction, DEC));
-			SerialTools::readDummyBytesFromSerial(Serial1, 4);
-			break;
-
+		
 	}
 }
 
