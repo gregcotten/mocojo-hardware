@@ -1,6 +1,6 @@
 #include <SMC.h>
 
-SMC smc;
+SMC smc(Serial1*);
 
 void setup(){
 	smc.initialize();
