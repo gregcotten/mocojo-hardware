@@ -33,7 +33,7 @@ long SerialTools::readLongFromSerial(HardwareSerial &serial){
 
 void SerialTools::writeDummyBytesToSerial(HardwareSerial &serial, int numberOfDummyBytes){
 	for (int i = 0; i < numberOfDummyBytes; i++){
-		(&serial) -> write((uint8_t)1);
+		(&serial) -> write((uint8_t)0);
 	}
 }
 
@@ -44,6 +44,6 @@ void SerialTools::readDummyBytesFromSerial(HardwareSerial &serial, int numberOfD
 }
 
 void SerialTools::blockUntilBytesArrive(HardwareSerial &serial, int numberOfBytes){
-	while( (&serial)->available() <= numberOfBytes){}
+	while( ((&serial)->available()) < numberOfBytes){}
 }
 
