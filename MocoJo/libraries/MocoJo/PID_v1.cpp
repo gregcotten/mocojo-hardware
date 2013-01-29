@@ -17,7 +17,7 @@
  *    The parameters specified here are those for for which we can't set up 
  *    reliable defaults, so we need to have the user set them.
  ***************************************************************************/
-PID::PID(double* Input, double* Output, double* Setpoint,
+PID::PID(long* Input, long* Output, long* Setpoint,
         double Kp, double Ki, double Kd, int ControllerDirection)
 {
 	
@@ -52,7 +52,7 @@ bool PID::Compute()
    if(timeChange>=SampleTime)
    {
       /*Compute all the working error variables*/
-	  double input = *myInput;
+	  long input = *myInput;
       double error = *mySetpoint - input;
       ITerm+= (ki * error);
       if(ITerm > outMax) ITerm= outMax;
@@ -64,7 +64,7 @@ bool PID::Compute()
       
 	  if(output > outMax) output = outMax;
       else if(output < outMin) output = outMin;
-	  *myOutput = output;
+	  *myOutput = (long)output;
 	  
       /*Remember some variables for next time*/
       lastInput = input;
@@ -122,7 +122,7 @@ void PID::SetSampleTime(int NewSampleTime)
  *  want to clamp it from 0-125.  who knows.  at any rate, that can all be done
  *  here.
  **************************************************************************/
-void PID::SetOutputLimits(double Min, double Max)
+void PID::SetOutputLimits(long Min, long Max)
 {
    if(Min >= Max) return;
    outMin = Min;
