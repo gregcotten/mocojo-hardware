@@ -21,7 +21,7 @@ long _encoderAbsolutePositionOffset;
 float _encoderSensitivity;
 
 //Velocity Data
-unsigned long _timeSinceLastUpdate;
+unsigned long _timeSinceLastVelocityUpdate;
 unsigned long _timeInMillisecondsAtLastUpdate;
 float _encoderVelocity;
 
@@ -117,9 +117,9 @@ void AS5045::update(){
     _encoderAbsolutePosition = _encoderRelativePosition + 4096*_encoderRevolutionCount;   
   }
 
-  _timeSinceLastUpdate = millis() - _timeInMillisecondsAtLastUpdate;
-  if (_timeSinceLastUpdate > 20){
-    _encoderVelocity = 1000.0*((float)_encoderAbsolutePosition - (float)_encoderPreviousAbsolutePosition)/((float)_timeSinceLastUpdate);
+  _timeSinceLastVelocityUpdate = millis() - _timeInMillisecondsAtLastUpdate;
+  if (_timeSinceLastVelocityUpdate > 20){
+    _encoderVelocity = 1000.0*((float)_encoderAbsolutePosition - (float)_encoderPreviousAbsolutePosition)/((float)_timeSinceLastVelocityUpdate);
     _encoderPreviousAbsolutePosition = _encoderAbsolutePosition;
     _timeInMillisecondsAtLastUpdate = millis();
   }
@@ -156,4 +156,3 @@ void AS5045::checkErrors(){
     if (LIN) { Serial.println("linearity alarm: magnet misaligned? Data questionable."); }
     if (COF) { Serial.println("cordic overflow: magnet misaligned? Data invalid."); }
 }
-
