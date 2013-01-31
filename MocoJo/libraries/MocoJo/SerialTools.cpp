@@ -44,10 +44,11 @@ void SerialTools::readDummyBytesFromSerial(HardwareSerial &serial, int numberOfD
 }
 
 void SerialTools::blockUntilBytesArrive(HardwareSerial &serial, int numberOfBytes){
-	while( ((&serial)->available()) < numberOfBytes){}
+	while( ((&serial)->available()) < numberOfBytes){
+	}
 }
 
-bool blockUntilBytesArrive(HardwareSerial &serial, int numberOfBytes, int timeoutMillis){
+boolean blockUntilBytesArrive(HardwareSerial &serial, int numberOfBytes, int timeoutMillis){
 	unsigned long startTime = millis();
 	while( ((&serial)->available()) < numberOfBytes){
 		if((millis() - startTime) > timeoutMillis){
