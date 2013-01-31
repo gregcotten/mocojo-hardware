@@ -118,7 +118,7 @@ void AS5045::update(){
   }
 
   _timeSinceLastUpdate = millis() - _timeInMillisecondsAtLastUpdate;
-  if (_timeSinceLastUpdate > 50){
+  if (_timeSinceLastUpdate > 20){
     _encoderVelocity = 1000.0*((float)_encoderAbsolutePosition - (float)_encoderPreviousAbsolutePosition)/((float)_timeSinceLastUpdate);
     _encoderPreviousAbsolutePosition = _encoderAbsolutePosition;
     _timeInMillisecondsAtLastUpdate = millis();
