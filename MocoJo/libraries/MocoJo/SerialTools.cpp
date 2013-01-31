@@ -52,9 +52,9 @@ boolean blockUntilBytesArrive(HardwareSerial &serial, int numberOfBytes, int tim
 	unsigned long startTime = millis();
 	while( ((&serial)->available()) < numberOfBytes){
 		if((millis() - startTime) > timeoutMillis){
-			return false;
+			return true;
 		}
 	}
-	return true;
+	return false;
 }
 
