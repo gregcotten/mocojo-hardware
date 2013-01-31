@@ -126,14 +126,7 @@ void doSerialDuties()
 void syncInterrupt(){
 	servoPositionAtLastSync = servoCurrentPosition;
 	if (isPlayback){
-		if(servoTargetPositionBuffer.amountFresh() > 0){
-			servoTargetPosition = servoTargetPositionBuffer.nextLong();
-			return;
-		}
-		else{
-			stopPlayback();
-			Serial.println("Target Buffer overrun or playback stopped @ frame " + String(frameCounter));
-		}
+		servoTargetPosition = servoTargetPositionBuffer.nextLong();
 	}
 }
 
@@ -171,6 +164,7 @@ void honeToPosition(long honePosition){
 
 
 void startPlayback(long honePosition){
+	Serial.println("Honing to position: " + String(honePosition, DEC));
 	honeToPosition(honePosition);
 	MocoJoServoCommunication::writeMocoJoServoDidHoneToFirstPosition(Serial1, servoID);
 
@@ -179,6 +173,9 @@ void startPlayback(long honePosition){
 	Serial.println("Buffer filled. Commencing playback by your command!");
 
 	isPlayback = true;
+
+	runPlayback();
+
 }
 
 void stopPlayback(){
@@ -190,6 +187,18 @@ void stopPlayback(){
 	
 	servoTargetPositionBuffer.reset();
 	frameCounter = 0;
+}
+
+void runPlayback(){
+	while(servoTargetPositionBuffer.amountFresh() > 0 && isPlayback){
+		doSerialDuties();
+		doPIDDuties();
+	}
+	if(isPlayback){
+		stopPlayback();	
+		Serial.println("Target Buffer overrun or playback stopped @ frame " + String(frameCounter));
+	}
+	
 }
 
 void processInstructionFromMCU(){
