@@ -11,6 +11,7 @@ class AS5045{
 		int getRelativePosition();
 		long getAbsolutePosition();
 		void setAbsolutePosition(long desiredPosition);
+		float getVelocity();
 	private:
 		void checkErrors();
 		
