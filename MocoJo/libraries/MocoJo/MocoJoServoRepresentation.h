@@ -7,6 +7,7 @@ class MocoJoServoRepresentation{
 	public:
 		MocoJoServoRepresentation(HardwareSerial &serial, int ID);
 		boolean handshake(); //returns true if handshake successful
+		void exitSafeStart();
 		long getCurrentPosition();
 		long getPositionAtLastSync();
 		long setTargetPosition(long targetPosition);
@@ -15,6 +16,8 @@ class MocoJoServoRepresentation{
 
 	private:
 		int servoID;
+		int servoTargetBufferAmountFresh;
+		int servoTargetBufferSize;
 		HardwareSerial* _serial; //pointer for what serial to use
 };
 #endif
