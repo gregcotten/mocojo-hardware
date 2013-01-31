@@ -17,6 +17,7 @@ boolean firstBoot = true;
 boolean isInitialized = false;
 boolean isStopped = true;
 boolean isPlayback = false;
+boolean isHoning = false;
 
 long frameCounter = 0; //local use
 
@@ -34,10 +35,12 @@ long servoTargetPosition = 0;
 LongBuffer servoTargetPositionBuffer(100);
 
 
-long servoTargetSpeed = 0;
-int servoMaxSpeed = 3200;
+long motorTargetSpeed = 0;
+int motorMaxSpeed = 3200;
 
-PID servoPositionPID(&servoCurrentPosition, &servoTargetSpeed, &servoTargetPosition,1,0,0, DIRECT);
+long servoVelocity = 0;
+
+PID servoPositionPID(&servoCurrentPosition, &motorTargetSpeed, &servoTargetPosition,1,0,0, DIRECT);
 int servoPositionPIDSampleTimeMillis = 1;
 //-----------------------------------------------
 
@@ -59,7 +62,7 @@ void setup(){
 	
 	pinMode(MCU_VirtualShutter_SyncIn_Pin, INPUT);
 
-	servoPositionPID.SetOutputLimits(-servoMaxSpeed, servoMaxSpeed);
+	servoPositionPID.SetOutputLimits(-motorMaxSpeed, motorMaxSpeed);
 	servoPositionPID.SetSampleTime(servoPositionPIDSampleTimeMillis);
 }
 
@@ -98,11 +101,13 @@ void doPIDDuties(){
 	//not hooked up to real motor and encoder so don't do this yet - we'll just emulate it!
 	//servoEncoder.update();
 	//servoCurrentPosition = servoEncoder.getAbsolutePosition();
+	//servoVelocity = servoEncoder.getVelocity();
 
 	//until we're hooked up for real let's pretend the PID is doing a GREAT job.
 	servoCurrentPosition = servoTargetPosition;
+	
 	if (!isStopped && servoPositionPID.Compute()){
-		motorController.setMotorSpeed(servoTargetSpeed);
+		motorController.setMotorSpeed(motorTargetSpeed);
 	}
 	
 }
@@ -140,19 +145,26 @@ void exitSafeStart(){
 void stopEverything(){
 	stopPlayback();
 	motorController.stopMotor();
+	servoTargetPosition = servoCurrentPosition;
 	isStopped = true;
+	isHoning = false;
 }
 
 void honeToPosition(long honePosition){
+	isHoning = true;
 	servoTargetPosition = honePosition;
 
 	// **servoPositionPID - make sure to change parameters for slow mode!
 
-	while (servoCurrentPosition != servoTargetPosition){
+	//also put servoVelocity != 0
+	while (isHoning && servoCurrentPosition != servoTargetPosition){
 		doPIDDuties();
 		doSerialDuties();
 	}
-	delay(1000); //delay for a second just to be sure we've stopped.
+	if(isHoning){
+		delay(1000); //delay for a second just to be sure we've stopped.
+		isHoning = false;
+	}
 
 	// **servoPositionPID - make sure to change parameters for normal mode!
 }
@@ -172,6 +184,9 @@ void startPlayback(long honePosition){
 void stopPlayback(){
 	
 	isPlayback = false;
+	isHoning = false;
+
+	servoTargetPosition = servoCurrentPosition;
 	
 	servoTargetPositionBuffer.reset();
 	frameCounter = 0;
@@ -244,8 +259,8 @@ void processInstructionFromMCU(){
 			break;
 
 		case MocoJoServoSetMaxSpeed:
-			servoMaxSpeed = data;
-			servoPositionPID.SetOutputLimits(-servoMaxSpeed, servoMaxSpeed);
+			motorMaxSpeed = data;
+			servoPositionPID.SetOutputLimits(-motorMaxSpeed, motorMaxSpeed);
 			break;
 		
 		default:
