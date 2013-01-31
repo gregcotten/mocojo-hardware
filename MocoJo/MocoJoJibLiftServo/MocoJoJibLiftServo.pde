@@ -46,7 +46,7 @@ int servoPositionPIDSampleTimeMillis = 1;
 
 
 //--------------Peripherals-----------------------
-AS5045 servoEncoder(4,5,6, 0, 1.0, false);
+AS5045 servoEncoder(4,5,6, 1.0, false);
 SMC motorController(Serial); //change this to Serial2
 //-----------------------------------------------
 
