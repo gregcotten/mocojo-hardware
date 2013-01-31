@@ -21,8 +21,9 @@ long _encoderAbsolutePositionOffset;
 float _encoderSensitivity;
 
 //Velocity Data
-long _timeInMillisecondsAtLastUpdate;
-double _encoderVelocity;
+unsigned long _timeSinceLastUpdate;
+unsigned long _timeInMillisecondsAtLastUpdate;
+float _encoderVelocity;
 
 //----------MAGNETIC ENCODER GENERAL-----------
 int inputstream = 0; //one bit read from pin
@@ -116,13 +117,18 @@ void AS5045::update(){
     _encoderAbsolutePosition = _encoderRelativePosition + 4096*_encoderRevolutionCount;   
   }
 
-  _encoderVelocity = 1000.0*((float)_encoderAbsolutePosition - (float)_encoderPreviousAbsolutePosition)/((float)_timeInMillisecondsAtLastUpdate);
+  _timeSinceLastUpdate = millis() - _timeInMillisecondsAtLastUpdate;
+  if (_timeSinceLastUpdate > 50){
+    _encoderVelocity = 1000.0*((float)_encoderAbsolutePosition - (float)_encoderPreviousAbsolutePosition)/((float)_timeSinceLastUpdate);
+    _encoderPreviousAbsolutePosition = _encoderAbsolutePosition;
+    _timeInMillisecondsAtLastUpdate = millis();
+  }
   
   
   _encoderPreviousRelativePosition = _encoderRelativePosition;
-  _encoderPreviousAbsolutePosition = _encoderAbsolutePosition;
+  
 
-  _timeInMillisecondsAtLastUpdate = millis();
+  
 
   packeddata = 0; // reset to zero so it doesn't accumulate ???
 

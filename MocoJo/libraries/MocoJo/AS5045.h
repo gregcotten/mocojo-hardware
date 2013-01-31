@@ -33,7 +33,8 @@ class AS5045{
 		float _encoderSensitivity;
 
 		//Velocity Data
-		long _timeInMillisecondsAtLastUpdate;
+		unsigned long _timeSinceLastUpdate;
+		unsigned long _timeInMillisecondsAtLastUpdate;
 		float _encoderVelocity;
 
 		//Backend
