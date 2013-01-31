@@ -11,14 +11,14 @@ void setup(){
 }
 
 void loop(){
-	sampleThen = micros();
+	//sampleThen = micros();
 	encoder.update();
-	Serial.println(micros() - sampleThen);
+	//Serial.println(micros() - sampleThen);
 	
-	// if(millis() - then >= 100){
-	// 	Serial.println("Position: " + String(encoder.getAbsolutePosition(), DEC) + " Velocity: " + String((int)encoder.getVelocity(), DEC));
-	// 	then = millis();	
-	// }
+	if(millis() - then >= 20){
+		Serial.println("Position: " + String(encoder.getAbsolutePosition(), DEC) + " Velocity: " + String((int)encoder.getVelocity(), DEC));
+		then = millis();	
+	}
 	
 }
 
