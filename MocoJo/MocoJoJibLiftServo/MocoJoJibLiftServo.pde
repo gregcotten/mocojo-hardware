@@ -28,7 +28,7 @@ const int MCU_VirtualShutter_SyncIn_Pin = 10; //HIGH is shutter off cycle, LOW i
 //--------------Servo Stuff-----------------------
 const int servoID = MocoAxisJibLift;
 long servoCurrentPosition = 0;
-long servoPositionAtLastSync = 0;
+long servoPositionAtLastSync;
 long servoResolution = 8*4095;
 
 long servoTargetPosition = 0;
@@ -75,9 +75,8 @@ void loop(){
 	if (isInitialized){
 		doPIDDuties();	
 	}
-	
+
 	doSerialDuties();
-//	doGeneralDuties();
 }
 
 void initialize(){
@@ -88,23 +87,15 @@ void initialize(){
 	Serial.println("initialized!");
 }
 
-/*
-	General duties are anything that needs to happen with some sort of immediacy (updating positions, controllers, etc.).
-*/
-void doGeneralDuties(){
-	if (!isPlayback){
-		
-	}
-}
-
 void doPIDDuties(){
-	//not hooked up to real motor and encoder so don't do this yet - we'll just emulate it!
-	//servoEncoder.update();
-	//servoCurrentPosition = servoEncoder.getAbsolutePosition();
-	//servoVelocity = servoEncoder.getVelocity();
+	
+	servoEncoder.update();
+	servoCurrentPosition = servoEncoder.getAbsolutePosition();
+	servoVelocity = servoEncoder.getVelocity();
 
+	//not hooked up to real motor and encoder so don't do this yet - we'll just emulate it!
 	//until we're hooked up for real let's pretend the PID is doing a GREAT job.
-	servoCurrentPosition = servoTargetPosition;
+	//servoCurrentPosition = servoTargetPosition;
 	
 	if (!isStopped && servoPositionPID.Compute()){
 		motorController.setMotorSpeed(motorTargetSpeed);
@@ -154,10 +145,7 @@ void honeToPosition(long honePosition){
 		doPIDDuties();
 		doSerialDuties();
 	}
-	if(isHoning){
-		delay(1000); //delay for a second just to be sure we've stopped.
-		isHoning = false;
-	}
+	isHoning = false;
 
 	// **servoPositionPID - make sure to change parameters for normal mode!
 }
@@ -263,7 +251,7 @@ void processInstructionFromMCU(){
 
 		case MocoJoServoAddTargetPositionToBuffer:
 			if(servoTargetPositionBuffer.isFull()){
-				Serial.println("MCU wrote to buffer when it was full!");
+				Serial.println("MCU wrote to target position buffer when it was full!");
 				stopPlayback();
 			}
 			servoTargetPositionBuffer.addLong(data);	
@@ -275,14 +263,10 @@ void processInstructionFromMCU(){
 			break;
 		
 		default:
-			Serial.println("Instruction Invalid: " + String(instruction, DEC));
+			Serial.println("Instruction Invalid: " + String(instruction, DEC) + " Data: " + String(data, DEC));
 		
 	}
 }
-
-
-
-
 
 
 
