@@ -5,6 +5,7 @@
 
 int _encoderDebug;
 
+
 //Pins
 int _encoderChipSelectPin; //output to chip select
 int _encoderClockPin; //output to clock
@@ -13,10 +14,15 @@ int _encoderInputPin; //read AS5045
 //Positional Data
 int _encoderRelativePosition;
 int _encoderPreviousRelativePosition; //so we don't detect a revolution at the beginning
-long _encoderAbsolutePosition;
 int _encoderRevolutionCount;
+long _encoderPreviousAbsolutePosition;
+long _encoderAbsolutePosition;
 long _encoderAbsolutePositionOffset;
 float _encoderSensitivity;
+
+//Velocity Data
+long _timeInMillisecondsAtLastUpdate;
+double _encoderVelocity;
 
 //----------MAGNETIC ENCODER GENERAL-----------
 int inputstream = 0; //one bit read from pin
@@ -47,7 +53,8 @@ AS5045::AS5045(int chipSelect, int clockpin, int input, long startingPosition, f
 
   //catch that pesky fake revolution
   update();
-  _encoderRevolutionCount = 0; 
+  _encoderRevolutionCount = 0;
+  _encoderVelocity = 0; 
   //zero out so that absolute position is zero
   setAbsolutePosition(startingPosition);
 }
@@ -62,6 +69,10 @@ long AS5045::getAbsolutePosition(){
 
 void AS5045::setAbsolutePosition(long desiredPosition){
   _encoderAbsolutePositionOffset = desiredPosition - _encoderAbsolutePosition;
+}
+
+float AS5045::getVelocity(){
+  return _encoderVelocity;
 }
 
 //Currently takes 110 microseconds to update @ chipKIT 96MHz
@@ -104,10 +115,15 @@ void AS5045::update(){
   else{
     _encoderAbsolutePosition = _encoderRelativePosition + 4096*_encoderRevolutionCount;   
   }
+
+  _encoderVelocity = 1000.0*((float)_encoderAbsolutePosition - (float)_encoderPreviousAbsolutePosition)/((float)_timeInMillisecondsAtLastUpdate);
   
   
   _encoderPreviousRelativePosition = _encoderRelativePosition;
-  
+  _encoderPreviousAbsolutePosition = _encoderAbsolutePosition;
+
+  _timeInMillisecondsAtLastUpdate = millis();
+
   packeddata = 0; // reset to zero so it doesn't accumulate ???
 
   if (_encoderDebug == true){

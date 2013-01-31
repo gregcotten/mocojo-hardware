@@ -13,6 +13,9 @@ class AS5045{
 		void setAbsolutePosition(long desiredPosition);
 	private:
 		void checkErrors();
+		
+		
+
 		int _encoderDebug;
 		//Pins
 		int _encoderChipSelectPin; //output to chip select
@@ -22,10 +25,15 @@ class AS5045{
 		//Positional Data
 		int _encoderRelativePosition;
 		int _encoderPreviousRelativePosition;
+		long _encoderPreviousAbsolutePosition;
 		long _encoderAbsolutePosition;
-		int _encoderRevolutionCount;
 		long _encoderAbsolutePositionOffset;
+		int _encoderRevolutionCount;
 		float _encoderSensitivity;
+
+		//Velocity Data
+		long _timeInMillisecondsAtLastUpdate;
+		float _encoderVelocity;
 
 		//Backend
 		int inputstream; //one bit read from pin
