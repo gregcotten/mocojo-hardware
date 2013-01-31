@@ -14,7 +14,7 @@ void MocoJoCommunication::writeHandshakeSuccessToComputer()
 void MocoJoCommunication::writeRequestForNextFrameToComputer()
 {
 	Serial.write(MocoProtocolAdvancePlaybackRequestType); 
-	Serial.write(10); //bogus axis
+	Serial.write(MocoAxisJibLift); //bogus axis
 	
 	//TODO: Slipstream previous position of axis into request instead of sending meaningless info here
 	SerialTools::writeLongToSerial(Serial, 1);
