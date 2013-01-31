@@ -84,7 +84,6 @@ void initialize(){
 	motorController.initialize();
 	isInitialized = true;
 	attachInterrupt(MCU_VirtualShutter_SyncIn_Pin, syncInterrupt, RISING);
-	Serial.println("initialized!");
 }
 
 void doPIDDuties(){
@@ -193,9 +192,9 @@ void processInstructionFromMCU(){
 	byte ID = Serial1.read();
 
 	if(ID != servoID){
-	//	Serial.println("wrong ID");
+		//Serial.println("wrong ID: " + String(ID, DEC) + " Instruction: " + String(Serial1.read(), DEC));
 		SerialTools::readDummyBytesFromSerial(Serial1, 5);
-		Serial.println(Serial1.available());
+		//Serial.println(Serial1.available());
 		return;
 	}
 	
