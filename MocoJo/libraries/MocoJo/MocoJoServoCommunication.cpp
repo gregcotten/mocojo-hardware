@@ -21,11 +21,6 @@ void MocoJoServoCommunication::writePositionAtLastSyncToMCU(HardwareSerial &seri
 	SerialTools::writeLongToSerial(serial, positionAtLastSync);
 }
 
-void MocoJoServoCommunication::writeMocoJoServoDidHoneToFirstPosition(HardwareSerial &serial, int ID){
-	(&serial) -> write(ID);
-	(&serial) -> write(MocoJoServoDidHoneToFirstPosition);
-	SerialTools::writeDummyBytesToSerial(serial, 4);
-}
 //----------------------
 
 //MCU to SERVO
@@ -54,6 +49,19 @@ void MocoJoServoCommunication::writeSetMaxSpeedToServo(HardwareSerial &serial, i
 
 
 //position
+
+void MocoJoServoCommunication::writeGetCurrentPositionToServo(HardwareSerial &serial, int ID){
+	(&serial) -> write(ID);
+	(&serial) -> write(MocoJoServoGetCurrentPosition);
+	SerialTools::writeDummyBytesToSerial(serial, 4);
+}
+
+void MocoJoServoCommunication::writeGetPositionAtLastSyncToServo(HardwareSerial &serial, int ID){
+	(&serial) -> write(ID);
+	(&serial) -> write(MocoJoServoGetPositionAtLastSync);
+	SerialTools::writeDummyBytesToSerial(serial, 4);
+}
+
 void MocoJoServoCommunication::writeSetTargetPositionToServo(HardwareSerial &serial, int ID, long targetPosition){
 	(&serial) -> write(ID);
 	(&serial) -> write(MocoJoServoSetTargetPosition);

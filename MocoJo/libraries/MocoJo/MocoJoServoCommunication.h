@@ -9,22 +9,23 @@ namespace MocoJoServoCommunication {
 	
 	void writeCurrentPositionToMCU(HardwareSerial &serial, int ID, long currentPosition);
 	void writePositionAtLastSyncToMCU(HardwareSerial &serial, int ID, long positionAtLastSync);
-
-	void writeMocoJoServoDidHoneToFirstPosition(HardwareSerial &serial, int ID);
 	//--------------
 
 
 	//MCU to Servo
 	void writeHandshakeRequestToServo(HardwareSerial &serial, int ID);
-	void MocoJoServoCommunication::writeExitSafeStartToServo(HardwareSerial &serial, int ID);
+	void writeExitSafeStartToServo(HardwareSerial &serial, int ID);
 	//limits
-	void MocoJoServoCommunication::writeSetMaxSpeedToServo(HardwareSerial &serial, int ID, long maxSpeed);
+	void writeSetMaxSpeedToServo(HardwareSerial &serial, int ID, long maxSpeed);
 	//position
-	void MocoJoServoCommunication::writeSetTargetPositionToServo(HardwareSerial &serial, int ID, long targetPosition);
-	void MocoJoServoCommunication::writeAddTargetPositionToBufferToServo(HardwareSerial &serial, int ID, long targetPosition);
+	void writeGetCurrentPositionToServo(HardwareSerial &serial, int ID);
+	void writeGetPositionAtLastSyncToServo(HardwareSerial &serial, int ID);
+
+	void writeSetTargetPositionToServo(HardwareSerial &serial, int ID, long targetPosition);
+	void writeAddTargetPositionToBufferToServo(HardwareSerial &serial, int ID, long targetPosition);
 	//playback
-	void MocoJoServoCommunication::writeStartPlaybackToServo(HardwareSerial &serial, int ID, long firstPosition);
-	void MocoJoServoCommunication::writeStopPlaybackToServo(HardwareSerial &serial, int ID);
+	void writeStartPlaybackToServo(HardwareSerial &serial, int ID, long firstPosition);
+	void writeStopPlaybackToServo(HardwareSerial &serial, int ID);
 	//--------------
 }
 
