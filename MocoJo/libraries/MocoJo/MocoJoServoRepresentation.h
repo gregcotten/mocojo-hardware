@@ -15,6 +15,7 @@ class MocoJoServoRepresentation{
 		boolean targetPositionBufferIsFull();
 
 	private:
+		void initialize();
 		int servoID;
 		int servoTargetBufferAmountFresh;
 		int servoTargetBufferSize;

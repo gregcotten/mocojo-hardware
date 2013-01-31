@@ -10,7 +10,6 @@ int _servoTargetBufferSize = 100;
 MocoJoServoRepresentation::MocoJoServoRepresentation(HardwareSerial &serial, int ID){
 	_servoID = ID;
 	_serial = &serial;
-	_serial->begin(MocoJoServoBaudRate);
 }
 
 boolean MocoJoServoRepresentation::handshake(){
@@ -18,7 +17,13 @@ boolean MocoJoServoRepresentation::handshake(){
 	MocoJoServoCommunication::writeHandshakeRequestToServo(*_serial, _servoID);
 	SerialTools::blockUntilBytesArrive(*_serial, 6);
 	SerialTools::readDummyBytesFromSerial(*_serial, 6);
+	initialize();
 	return true;
+	
+}
+
+void MocoJoServoRepresentation::initialize(){
+	MocoJoServoCommunication::writeInitializeToServo(*_serial, _servoID);
 }
 
 void MocoJoServoRepresentation::exitSafeStart(){
@@ -28,6 +33,7 @@ void MocoJoServoRepresentation::exitSafeStart(){
 long MocoJoServoRepresentation::getCurrentPosition(){
 	MocoJoServoCommunication::writeGetCurrentPositionToServo(*_serial, _servoID);
 	SerialTools::blockUntilBytesArrive(*_serial, 6);
+	SerialTools::readDummyBytesFromSerial(*_serial, 2);
 	return SerialTools::readLongFromSerial(*_serial);
 }
 
