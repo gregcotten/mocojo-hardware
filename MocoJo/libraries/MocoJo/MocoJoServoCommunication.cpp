@@ -32,6 +32,12 @@ void MocoJoServoCommunication::writeHandshakeRequestToServo(HardwareSerial &seri
 	SerialTools::writeDummyBytesToSerial(serial, 4);
 }
 
+void MocoJoServoCommunication::writeInitializeToServo(HardwareSerial &serial, int ID){
+	(&serial) -> write(ID);
+	(&serial) -> write(MocoJoServoInitializeRequest);
+	SerialTools::writeDummyBytesToSerial(serial, 4);
+}
+
 void MocoJoServoCommunication::writeExitSafeStartToServo(HardwareSerial &serial, int ID){
 	(&serial) -> write(ID);
 	(&serial) -> write(MocoJoServoExitSafeStart);

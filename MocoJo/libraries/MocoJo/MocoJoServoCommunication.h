@@ -14,6 +14,7 @@ namespace MocoJoServoCommunication {
 
 	//MCU to Servo
 	void writeHandshakeRequestToServo(HardwareSerial &serial, int ID);
+	void writeInitializeToServo(HardwareSerial &serial, int ID);
 	void writeExitSafeStartToServo(HardwareSerial &serial, int ID);
 	//limits
 	void writeSetMaxSpeedToServo(HardwareSerial &serial, int ID, long maxSpeed);
