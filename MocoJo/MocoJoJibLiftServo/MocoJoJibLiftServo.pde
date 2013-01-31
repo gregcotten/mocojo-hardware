@@ -262,9 +262,11 @@ void processInstructionFromMCU(){
 			break;
 
 		case MocoJoServoAddTargetPositionToBuffer:
-			if(isPlayback){
-				servoTargetPositionBuffer.addLong(data);	
+			if(servoTargetPositionBuffer.isFull()){
+				Serial.println("MCU wrote to buffer when it was full!");
+				stopPlayback();
 			}
+			servoTargetPositionBuffer.addLong(data);	
 			break;
 
 		case MocoJoServoSetMaxSpeed:
