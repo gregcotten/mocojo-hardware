@@ -154,7 +154,6 @@ void honeToPosition(long honePosition){
 void startPlayback(long honePosition){
 	Serial.println("Honing to position: " + String(honePosition, DEC));
 	honeToPosition(honePosition);
-	MocoJoServoCommunication::writeMocoJoServoDidHoneToFirstPosition(Serial1, servoID);
 
 	Serial.println("Waiting for buffer to fill...");
 	while(!servoTargetPositionBuffer.isFull()){}
