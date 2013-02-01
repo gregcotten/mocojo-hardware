@@ -40,6 +40,7 @@ long MocoJoServoRepresentation::getCurrentPosition(){
 long MocoJoServoRepresentation::getPositionAtLastSync(){
 	MocoJoServoCommunication::writeGetPositionAtLastSyncToServo(*_serial, _servoID);
 	SerialTools::blockUntilBytesArrive(*_serial, 6);
+	SerialTools::readDummyBytesFromSerial(*_serial, 2);
 	return SerialTools::readLongFromSerial(*_serial);
 }
 
