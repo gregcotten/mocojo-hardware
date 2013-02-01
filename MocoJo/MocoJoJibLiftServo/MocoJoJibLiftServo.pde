@@ -8,8 +8,8 @@
 #include <AS5045.h>
 
 //---------------GENERAL------------------
-const int ledPin = 13; //LED connected to digital pin 13
-const int ledPin2 = 43; //LED connected to digital pin 13
+const int ledPin1 = 13; //LED connected to digital pin 13
+const int ledPin2 = 43; //LED connected to digital pin 43
 //----------------------------------------
 
 //---------------Moco LOGIC--------------------
@@ -22,13 +22,13 @@ boolean isHoning = false;
 long frameCounter = 0; //local use
 
 //--------------Moco GPIO------------------------
-const int MCU_VirtualShutter_SyncIn_Pin = 10; //HIGH is shutter off cycle, LOW is shutter on cycle
+const int MCU_VirtualShutter_SyncIn_Pin = 2; //HIGH is shutter off cycle, LOW is shutter on cycle
 //----------------------------------------------
 
 //--------------Servo Stuff-----------------------
 const int servoID = MocoAxisJibLift;
 long servoCurrentPosition = 0;
-long servoPositionAtLastSync;
+volatile long servoPositionAtLastSync;
 long servoResolution = 8*4095;
 
 long servoTargetPosition = 0;
@@ -55,8 +55,8 @@ void setup(){
 	Serial.begin(115200);
 	Serial1.begin(MocoJoServoBaudRate);
 	
-	pinMode(ledPin, OUTPUT); // visual signal of I/O to chip
-	digitalWrite(ledPin, LOW);
+	pinMode(ledPin1, OUTPUT); // visual signal of I/O to chip
+	digitalWrite(ledPin1, LOW);
 	pinMode(ledPin2, OUTPUT); // visual signal of I/O to chip
 	digitalWrite(ledPin2, LOW);
 	
@@ -88,13 +88,13 @@ void initialize(){
 
 void doPIDDuties(){
 	
-	servoEncoder.update();
-	servoCurrentPosition = servoEncoder.getAbsolutePosition();
-	servoVelocity = servoEncoder.getVelocity();
+	// servoEncoder.update();
+	// servoCurrentPosition = servoEncoder.getAbsolutePosition();
+	// servoVelocity = servoEncoder.getVelocity();
 
 	//not hooked up to real motor and encoder so don't do this yet - we'll just emulate it!
 	//until we're hooked up for real let's pretend the PID is doing a GREAT job.
-	//servoCurrentPosition = servoTargetPosition;
+	servoCurrentPosition = servoTargetPosition;
 	
 	if (!isStopped && servoPositionPID.Compute()){
 		motorController.setMotorSpeed(motorTargetSpeed);
@@ -197,9 +197,12 @@ void processInstructionFromMCU(){
 		//Serial.println(Serial1.available());
 		return;
 	}
-	
+
 	byte instruction = Serial1.read();
 	long data = SerialTools::readLongFromSerial(Serial1);
+
+	//if it's not a handshake or initialization request ignore the instruction!
+
 	//Serial.println("instruction: " + String(instruction, DEC));
 	//Serial.println("data: " + String(data, DEC));
 	switch(instruction){
