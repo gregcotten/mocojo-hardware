@@ -28,7 +28,7 @@ const int MCU_VirtualShutter_SyncIn_Pin = 2; //HIGH is shutter off cycle, LOW is
 //--------------Servo Stuff-----------------------
 const int servoID = MocoAxisJibLift;
 long servoCurrentPosition = 0;
-volatile long servoPositionAtLastSync;
+volatile long servoPositionAtLastSync=0;
 long servoResolution = 8*4095;
 
 long servoTargetPosition = 0;
@@ -40,7 +40,7 @@ int motorMaxSpeed = 3200;
 
 long servoVelocity = 0;
 
-PID servoPositionPID(&servoCurrentPosition, &motorTargetSpeed, &servoTargetPosition,1,0,0, DIRECT);
+//PID servoPositionPID(&servoCurrentPosition, &motorTargetSpeed, &servoTargetPosition,1,0,0, DIRECT);
 int servoPositionPIDSampleTimeMillis = 1;
 //-----------------------------------------------
 
@@ -59,11 +59,9 @@ void setup(){
 	digitalWrite(ledPin1, LOW);
 	pinMode(ledPin2, OUTPUT); // visual signal of I/O to chip
 	digitalWrite(ledPin2, LOW);
-	
-	pinMode(MCU_VirtualShutter_SyncIn_Pin, INPUT);
 
-	servoPositionPID.SetOutputLimits(-motorMaxSpeed, motorMaxSpeed);
-	servoPositionPID.SetSampleTime(servoPositionPIDSampleTimeMillis);
+	//servoPositionPID.SetOutputLimits(-motorMaxSpeed, motorMaxSpeed);
+	//servoPositionPID.SetSampleTime(servoPositionPIDSampleTimeMillis);
 }
 
 void loop(){
@@ -95,11 +93,11 @@ void doPIDDuties(){
 	//not hooked up to real motor and encoder so don't do this yet - we'll just emulate it!
 	//until we're hooked up for real let's pretend the PID is doing a GREAT job.
 	servoCurrentPosition = servoTargetPosition;
-	
+	/*
 	if (!isStopped && servoPositionPID.Compute()){
 		motorController.setMotorSpeed(motorTargetSpeed);
 	}
-	
+	*/
 }
 
 /*
@@ -112,6 +110,8 @@ void doSerialDuties()
 		processInstructionFromMCU();
 	}
 }
+
+
 
 void syncInterrupt(){
 	servoPositionAtLastSync = servoCurrentPosition;
@@ -260,7 +260,7 @@ void processInstructionFromMCU(){
 
 		case MocoJoServoSetMaxSpeed:
 			motorMaxSpeed = data;
-			servoPositionPID.SetOutputLimits(-motorMaxSpeed, motorMaxSpeed);
+			//servoPositionPID.SetOutputLimits(-motorMaxSpeed, motorMaxSpeed);
 			break;
 		
 		default:
