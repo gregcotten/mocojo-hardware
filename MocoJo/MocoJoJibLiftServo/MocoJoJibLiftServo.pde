@@ -6,6 +6,7 @@
 #include <LongBuffer.h>
 #include <SMC.h>
 #include <AS5045.h>
+#include <ChangeNotification.h>
 
 //---------------GENERAL------------------
 const int ledPin1 = 13; //LED connected to digital pin 13
@@ -22,7 +23,8 @@ boolean isHoning = false;
 long frameCounter = 0; //local use
 
 //--------------Moco GPIO------------------------
-const int MCU_VirtualShutter_SyncIn_Pin = 2; //HIGH is shutter off cycle, LOW is shutter on cycle
+const int MCU_VirtualShutter_SyncIn_Pin = 11; //HIGH is shutter off cycle, LOW is shutter on cycle
+const cn MCU_VirtualShutter_SyncIn_CN_Pin = CN_10;
 //----------------------------------------------
 
 //--------------Servo Stuff-----------------------
@@ -81,7 +83,7 @@ void initialize(){
 	digitalWrite(ledPin2, HIGH); //visual indication of initialization
 	motorController.initialize();
 	isInitialized = true;
-	attachInterrupt(MCU_VirtualShutter_SyncIn_Pin, syncInterrupt, RISING);
+	attachInterrupt(MCU_VirtualShutter_SyncIn_CN_Pin, syncInterrupt, RISING);
 }
 
 void doPIDDuties(){
