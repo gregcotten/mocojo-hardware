@@ -16,6 +16,7 @@ void setup(){
 		Serial.println("hands shook!");
 	}
 	servoJibLift.setTargetPosition(200);
+	digitalWrite(syncOutPin, LOW);
 	delay(100);
 
 }
@@ -23,10 +24,8 @@ long i = 201;
 void loop(){
 	//unsigned long then = micros();
 	digitalWrite(syncOutPin, LOW);
-	delay(200);
+	delay(1);
 	digitalWrite(syncOutPin, HIGH);
-	delay(200);
-	digitalWrite(syncOutPin, LOW);
 	
 	Serial.println(servoJibLift.getPositionAtLastSync());
 	servoJibLift.setTargetPosition(i++);
@@ -35,6 +34,5 @@ void loop(){
 
 	//unsigned long duration = micros() - then;
 	//Serial.println("time: " + String(duration, DEC));
-	delay(1000);
-
+	delay(10);
 }
