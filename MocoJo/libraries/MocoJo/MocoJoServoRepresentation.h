@@ -7,6 +7,7 @@ class MocoJoServoRepresentation{
 	public:
 		MocoJoServoRepresentation(HardwareSerial &serial, int ID);
 		boolean handshake(); //returns true if handshake successful
+		int getServoID();
 		void exitSafeStart();
 		long getCurrentPosition();
 		long getPositionAtLastSync();

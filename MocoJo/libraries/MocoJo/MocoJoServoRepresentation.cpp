@@ -26,6 +26,10 @@ void MocoJoServoRepresentation::initialize(){
 	MocoJoServoCommunication::writeInitializeToServo(*_serial, _servoID);
 }
 
+int MocoJoServoRepresentation::getServoID(){
+	return _servoID;
+}
+
 void MocoJoServoRepresentation::exitSafeStart(){
 	MocoJoServoCommunication::writeExitSafeStartToServo(*_serial, _servoID);
 } 
