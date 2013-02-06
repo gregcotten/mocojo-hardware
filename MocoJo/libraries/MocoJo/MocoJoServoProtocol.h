@@ -1,6 +1,7 @@
 //Initializing
 enum{
 	MocoJoServoBaudRate = 1000000,
+	MocoJoServoBufferSize = 200,
 	MocoJoServoHandshakeRequest = 0,
 	MocoJoServoHandshakeSuccessfulResponse = 1,
 	MocoJoServoInitializeRequest = 14
