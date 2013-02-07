@@ -29,18 +29,25 @@ const cn MCU_VirtualShutter_SyncIn_CN_Pin = CN_10;
 
 //--------------Servo Stuff-----------------------
 const int servoID = MocoAxisJibLift;
+
 long servoCurrentPosition = 0;
+long servoCurrentVelocity = 0;
+
 volatile long servoPositionAtLastSync=0;
+volatile long servoVelocityAtLastSync=0;
+
 long servoResolution = 8*4095;
 
 long servoTargetPosition = 0;
-LongBuffer servoTargetPositionBuffer(100);
 
+//buffer
+LongBuffer servoTargetPositionBuffer(MocoJoServoBufferSize);
+boolean proceedToHone = false;
 
 long motorTargetSpeed = 0;
 int motorMaxSpeed = 3200;
 
-long servoVelocity = 0;
+
 
 //PID servoPositionPID(&servoCurrentPosition, &motorTargetSpeed, &servoTargetPosition,1,0,0, DIRECT);
 int servoPositionPIDSampleTimeMillis = 1;
@@ -90,7 +97,7 @@ void doPIDDuties(){
 	
 	// servoEncoder.update();
 	// servoCurrentPosition = servoEncoder.getAbsolutePosition();
-	// servoVelocity = servoEncoder.getVelocity();
+	// servoCurrentVelocity = servoEncoder.getVelocity();
 
 	//not hooked up to real motor and encoder so don't do this yet - we'll just emulate it!
 	//until we're hooked up for real let's pretend the PID is doing a GREAT job.
@@ -117,8 +124,11 @@ void doSerialDuties()
 
 void syncInterrupt(){
 	servoPositionAtLastSync = servoCurrentPosition;
+	servoVelocityAtLastSync = servoCurrentVelocity;
+	
 	if (isPlayback){
 		servoTargetPosition = servoTargetPositionBuffer.nextLong();
+		frameCounter++;
 	}
 }
 
@@ -142,7 +152,7 @@ void honeToPosition(long honePosition){
 	// **servoPositionPID - make sure to change parameters for slow mode!
 
 	//also put servoVelocity != 0
-	while (isHoning && servoCurrentPosition != servoTargetPosition){
+	while (isPlayback && isHoning && servoCurrentPosition != servoTargetPosition){
 		doPIDDuties();
 		doSerialDuties();
 	}
@@ -152,29 +162,29 @@ void honeToPosition(long honePosition){
 }
 
 
-void startPlayback(long honePosition){
-	Serial.println("Honing to position: " + String(honePosition, DEC));
-	honeToPosition(honePosition);
+void startPlayback(){
+
+	//TODO: Stop moving you bastard!
+
+	frameCounter = 0;
+	isPlayback = true;
+	proceedToHone = false;
 
 	Serial.println("Waiting for buffer to fill...");
-	while(!servoTargetPositionBuffer.isFull()){}
-	Serial.println("Buffer filled. Commencing playback by your command!");
-
-	isPlayback = true;
+	while(isPlayback && !servoTargetPositionBuffer.isFull() && !proceedToHone){
+		doPIDDuties();
+		doSerialDuties();
+	}
+	if(!isPlayback){
+		return;
+	}
+	Serial.println("Buffer filled.");
+	
+	Serial.println("Honing to position: " + String(servoTargetPositionBuffer.peek(), DEC));
+	honeToPosition(servoTargetPositionBuffer.peek());
 
 	runPlayback();
 
-}
-
-void stopPlayback(){
-	
-	isPlayback = false;
-	isHoning = false;
-
-	servoTargetPosition = servoCurrentPosition;
-	
-	servoTargetPositionBuffer.reset();
-	frameCounter = 0;
 }
 
 void runPlayback(){
@@ -188,6 +198,18 @@ void runPlayback(){
 	}
 	
 }
+
+void stopPlayback(){
+	
+	isPlayback = false;
+	isHoning = false;
+
+	servoTargetPosition = servoCurrentPosition;
+	
+	servoTargetPositionBuffer.reset();
+}
+
+
 
 void processInstructionFromMCU(){
 	//Serial.println("read ID");
@@ -229,13 +251,15 @@ void processInstructionFromMCU(){
 
 		//Playback:
 		case MocoJoServoStartPlayback:
-			startPlayback(data);
+			startPlayback();
 			break;
 
 		case MocoJoServoStopPlayback:
 			stopPlayback();
 			break;
-		
+		case MocoJoServoProceedToHone:
+			proceedToHone = true;
+			break;
 		//GETTERS:
 		case MocoJoServoGetCurrentPosition:
 			MocoJoServoCommunication::writeCurrentPositionToMCU(Serial1, servoID, servoCurrentPosition);
@@ -253,6 +277,10 @@ void processInstructionFromMCU(){
 			break;
 
 		case MocoJoServoAddTargetPositionToBuffer:
+			if(!isPlayback){
+				Serial.println("MCU tried to add to target position buffer when not in playback!");
+				return;
+			}
 			if(servoTargetPositionBuffer.isFull()){
 				Serial.println("MCU wrote to target position buffer when it was full!");
 				stopPlayback();
