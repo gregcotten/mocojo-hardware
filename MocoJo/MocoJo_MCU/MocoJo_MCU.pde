@@ -143,7 +143,7 @@ void stopLiveDataStreamToComputer()
 long getAxisPositionFromNextFrame(int axisID){
 	MocoJoCommunication::writeRequestForNextFrameToComputer(axisID);
 	byte instruction;
-	while(true){
+	while(isPlayback){
 		if (Serial.available()){
 			instruction = Serial.read();
 			if (instruction != MocoProtocolPlaybackFrameDataHeader){
@@ -158,21 +158,8 @@ long getAxisPositionFromNextFrame(int axisID){
 	}
 }
 
-void addTargetPositionToBuffer(int servoID, long position){
-	switch(servoID){
-		case MocoAxisJibLift:
-			servoJibLift.addTargetPositionToBuffer(position);
-			break;
-	}
-}
-
 void fillBuffer(){
-	if(!servoJibLift.targetPositionBufferIsFull()){
-			servoJibLift.addTargetPositionToBuffer(getAxisPositionFromNextFrame(servoJibLift.getServoID()));	
-	}
-	else{
-		Logger::writeDebugString("you filled when it was full bitch!", true);
-	}
+	servoJibLift.addTargetPositionToBuffer(getAxisPositionFromNextFrame(servoJibLift.getServoID()));
 	frameBufferCounter++;
 	amountFreshBufferCounter++;
 }
@@ -191,14 +178,19 @@ void startPlaybackFromComputer()
 	//*********** BEGIN FIRST BUFFER ***********
 	
 	Logger::writeDebugString("Filling Initial Buffer", true);
-	
+	unsigned long then = millis();
 	//fill buffer until finalFrame is found or we run out of buffer space
 	while(isPlayback && frameBufferCounter < finalFrame && amountFreshBufferCounter < MocoJoServoBufferSize){
 		fillBuffer();
-		Logger::writeDebugString(String(frameBufferCounter), true);
+		//Logger::writeDebugString(String(frameBufferCounter), true);
 	}
+	if(!isPlayback){
+		return;
+	}
+
+	unsigned long duration = millis() - then;
 	
-	Logger::writeDebugString("Initial Buffer Filled, notifying servos to hone.", true);
+	Logger::writeDebugString("Initial Buffer Filled in "+String(duration, DEC)+"ms, notifying servos to hone.", true);
 
 	servoJibLift.proceedToHone();
 	
@@ -224,8 +216,15 @@ void runPlayback(){
 			fillBuffer();	
 		}
 	}
-	stopPlaybackFromComputer();
-	MocoJoCommunication::writePlaybackHasCompletedToComputer();
+	if(isPlayback){
+		stopPlaybackFromComputer();
+		//notify computer that we finished normally!
+		MocoJoCommunication::writePlaybackHasCompletedToComputer();
+	}
+	else{
+		stopPlaybackFromComputer();
+	}
+	
 	Logger::writeDebugString("Playback Completed at Frame "+ String(frameCounter, DEC), true);
 }
 
@@ -242,7 +241,6 @@ void stopPlaybackFromComputer()
 void playbackShutterDidFire()
 {
 	shutterFire();
-	servoJibLift.playbackShutterDidFire();
 	frameCounter++;
 	amountFreshBufferCounter--;
 }
@@ -345,10 +343,6 @@ void processInstructionFromComputer(byte instruction){
 			//set our last frame limit thing
 			break;
 		
-		case MocoProtocolPlaybackFrameDataHeader:
-			SerialTools::blockUntilBytesArrive(Serial, 5);
-			addTargetPositionToBuffer(Serial.read(), SerialTools::readLongFromSerial(Serial));
-			break;
 
 		case MocoProtocolSeekPositionDataHeader:
 			SerialTools::blockUntilBytesArrive(Serial, 5);
