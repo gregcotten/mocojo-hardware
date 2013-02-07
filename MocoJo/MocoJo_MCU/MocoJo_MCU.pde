@@ -217,7 +217,7 @@ void startPlaybackFromComputer()
 }
 
 void runPlayback(){
-	while(isPlayback && frameCounter <= finalFrame){
+	while(isPlayback && frameCounter < finalFrame){
 		doGeneralDuties();
 		doSerialDuties();
 		if(frameBufferCounter < finalFrame && amountFreshBufferCounter < MocoJoServoBufferSize){
@@ -226,7 +226,7 @@ void runPlayback(){
 	}
 	stopPlaybackFromComputer();
 	MocoJoCommunication::writePlaybackHasCompletedToComputer();
-	Logger::writeDebugString("Playback Completed at Frame "+ String(frameCounter-1, DEC), true);
+	Logger::writeDebugString("Playback Completed at Frame "+ String(frameCounter, DEC), true);
 }
 
 
@@ -235,6 +235,8 @@ void stopPlaybackFromComputer()
 	isPlayback = false;
 	MocoTimer1::stop();
 	digitalWrite(ledPin1, LOW);
+
+	servoJibLift.stopPlayback();
 }
 
 void playbackShutterDidFire()
