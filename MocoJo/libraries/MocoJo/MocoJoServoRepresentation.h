@@ -13,8 +13,6 @@ class MocoJoServoRepresentation{
 		long getPositionAtLastSync();
 		long setTargetPosition(long targetPosition);
 		void addTargetPositionToBuffer(long targetPosition);
-		boolean targetPositionBufferIsFull();
-		void playbackShutterDidFire();
 		void startPlayback();
 		void stopPlayback();
 		void proceedToHone();

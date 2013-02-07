@@ -4,9 +4,7 @@
 #include <SerialTools.h>
 
 int _servoID = 0;
-int _servoTargetBufferAmountFresh = 0;
-int _servoTargetBufferSize = 100;
-int _targetBufferAmountFresh = 0;
+
 
 
 MocoJoServoRepresentation::MocoJoServoRepresentation(HardwareSerial &serial, int ID){
@@ -40,16 +38,7 @@ void MocoJoServoRepresentation::stopPlayback(){
 	MocoJoServoCommunication::writeStopPlaybackToServo(*_serial, _servoID);
 }
 
-void MocoJoServoRepresentation::playbackShutterDidFire(){
-	_targetBufferAmountFresh--;
-}
 
-boolean MocoJoServoRepresentation::targetPositionBufferIsFull(){
-	if (_targetBufferAmountFresh == MocoJoServoBufferSize){
-		return true;
-	}
-	return false;
-}
 
 //-----------------
 
@@ -98,6 +87,5 @@ void MocoJoServoRepresentation::exitSafeStart(){
 
 void MocoJoServoRepresentation::addTargetPositionToBuffer(long targetPosition){
 	MocoJoServoCommunication::writeAddTargetPositionToBufferToServo(*_serial, _servoID, targetPosition);
-	_targetBufferAmountFresh++;
 }
 //-----------------
