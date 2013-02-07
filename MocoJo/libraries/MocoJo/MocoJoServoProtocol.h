@@ -14,7 +14,8 @@ enum{
 	MocoJoServoStartPlayback = 2,
 	MocoJoServoStopPlayback = 3,
 	MocoJoServoStopEverything = 4,
-	MocoJoServoExitSafeStart = 5
+	MocoJoServoExitSafeStart = 5,
+	MocoJoServoProceedToHone = 15
 
 };
 

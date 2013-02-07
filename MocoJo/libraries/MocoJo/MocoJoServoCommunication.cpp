@@ -81,15 +81,21 @@ void MocoJoServoCommunication::writeAddTargetPositionToBufferToServo(HardwareSer
 }
 
 //playback
-void MocoJoServoCommunication::writeStartPlaybackToServo(HardwareSerial &serial, int ID, long firstPosition){
+void MocoJoServoCommunication::writeStartPlaybackToServo(HardwareSerial &serial, int ID){
 	(&serial) -> write(ID);
 	(&serial) -> write(MocoJoServoStartPlayback);
-	SerialTools::writeLongToSerial(serial, firstPosition);
+	SerialTools::writeDummyBytesToSerial(serial, 4);
 }
 
 void MocoJoServoCommunication::writeStopPlaybackToServo(HardwareSerial &serial, int ID){
 	(&serial) -> write(ID);
 	(&serial) -> write(MocoJoServoStopPlayback);
+	SerialTools::writeDummyBytesToSerial(serial, 4);
+}
+
+void MocoJoServoCommunication::writeProceedToHoneToServo(HardwareSerial &serial, int ID){
+	(&serial) -> write(ID);
+	(&serial) -> write(MocoJoServoProceedToHone);
 	SerialTools::writeDummyBytesToSerial(serial, 4);
 }
 //-----------------------

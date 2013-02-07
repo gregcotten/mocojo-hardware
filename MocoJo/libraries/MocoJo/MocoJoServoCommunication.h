@@ -25,8 +25,9 @@ namespace MocoJoServoCommunication {
 	void writeSetTargetPositionToServo(HardwareSerial &serial, int ID, long targetPosition);
 	void writeAddTargetPositionToBufferToServo(HardwareSerial &serial, int ID, long targetPosition);
 	//playback
-	void writeStartPlaybackToServo(HardwareSerial &serial, int ID, long firstPosition);
+	void writeStartPlaybackToServo(HardwareSerial &serial, int ID);
 	void writeStopPlaybackToServo(HardwareSerial &serial, int ID);
+	void writeProceedToHoneToServo(HardwareSerial &serial, int ID);
 	//--------------
 }
 

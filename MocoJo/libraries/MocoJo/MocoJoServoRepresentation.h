@@ -12,14 +12,16 @@ class MocoJoServoRepresentation{
 		long getCurrentPosition();
 		long getPositionAtLastSync();
 		long setTargetPosition(long targetPosition);
-		long addTargetPositionToBuffer(long targetPosition);
+		void addTargetPositionToBuffer(long targetPosition);
 		boolean targetPositionBufferIsFull();
+		void playbackShutterDidFire();
+		void startPlayback();
+		void stopPlayback();
+		void proceedToHone();
+		boolean isHoning();
 
 	private:
 		void initialize();
-		int servoID;
-		int servoTargetBufferAmountFresh;
-		int servoTargetBufferSize;
 		HardwareSerial* _serial; //pointer for what serial to use
 };
 #endif
