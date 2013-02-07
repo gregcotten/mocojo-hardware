@@ -11,10 +11,10 @@ void MocoJoCommunication::writeHandshakeSuccessToComputer()
 	SerialTools::writeDummyBytesToSerial(Serial, 3);
 }
 
-void MocoJoCommunication::writeRequestForNextFrameToComputer()
+void MocoJoCommunication::writeRequestForNextFrameToComputer(int axisID)
 {
 	Serial.write(MocoProtocolAdvancePlaybackRequestType); 
-	Serial.write(MocoAxisJibLift); //bogus axis
+	Serial.write(axisID);
 	
 	//TODO: Slipstream previous position of axis into request instead of sending meaningless info here
 	SerialTools::writeLongToSerial(Serial, 1);
