@@ -167,7 +167,6 @@ void startPlayback(){
 	//TODO: Stop moving you bastard!
 
 	frameCounter = 0;
-	isPlayback = true;
 	proceedToHone = false;
 
 	Serial.println("Waiting for buffer to fill...");
@@ -187,14 +186,16 @@ void startPlayback(){
 
 }
 
+
 void runPlayback(){
 	while(servoTargetPositionBuffer.amountFresh() > 0 && isPlayback){
 		doSerialDuties();
 		doPIDDuties();
 	}
 	if(isPlayback){
+		Serial.println("Target Buffer overrun or playback stopped @ frame " + String(frameCounter) +" and position " + String(servoTargetPosition, DEC));
 		stopPlayback();	
-		Serial.println("Target Buffer overrun or playback stopped @ frame " + String(frameCounter));
+		
 	}
 	
 }
@@ -207,6 +208,7 @@ void stopPlayback(){
 	servoTargetPosition = servoCurrentPosition;
 	
 	servoTargetPositionBuffer.reset();
+	Serial.println("Playback Stopped!");
 }
 
 
@@ -251,6 +253,7 @@ void processInstructionFromMCU(){
 
 		//Playback:
 		case MocoJoServoStartPlayback:
+			isPlayback = true;
 			startPlayback();
 			break;
 
