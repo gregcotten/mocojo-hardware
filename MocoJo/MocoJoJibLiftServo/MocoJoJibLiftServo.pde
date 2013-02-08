@@ -15,7 +15,6 @@ const int ledPin2 = 43; //LED connected to digital pin 43
 //----------------------------------------
 
 //---------------Moco LOGIC--------------------
-boolean firstBoot = true;
 boolean isInitialized = false;
 boolean isStopped = true;
 boolean isPlayback = false;
@@ -25,7 +24,7 @@ long frameCounter = 0; //local use
 
 //--------------Moco GPIO------------------------
 const int MCU_VirtualShutter_SyncIn_Pin = 11; //HIGH is shutter off cycle, LOW is shutter on cycle
-const cn MCU_VirtualShutter_SyncIn_CN_Pin = CN_10;
+const cn MCU_VirtualShutter_SyncIn_CN_Pin = CN_10; //CN_10 is pin 11
 //----------------------------------------------
 
 //--------------Servo Stuff-----------------------
@@ -40,24 +39,28 @@ volatile long servoVelocityAtLastSync=0;
 long servoResolution = 8*4095;
 
 long servoTargetPosition = 0;
+long servoTargetVelocity = 0;
+long motorTargetSpeed = 0;
 
 //buffer
 LongBuffer servoTargetPositionBuffer(MocoJoServoBufferSize);
+
+//commands
 boolean proceedToHone = false;
 
-long motorTargetSpeed = 0;
-int motorMaxSpeed = 3200;
 
 
 
-PID servoPositionPID(&servoCurrentPosition, &motorTargetSpeed, &servoTargetPosition,4,0,0, DIRECT);
-int servoPositionPIDSampleTimeMillis = 1;
+//PID
+PID servoPositionPID(&servoCurrentPosition, &servoTargetVelocity, &servoTargetPosition,4,0,0, DIRECT);
+PID servoVelocityPID(&servoCurrentVelocity, &motorTargetSpeed, &servoTargetVelocity,4,0,0, DIRECT);
+const int servoPIDSampleTimeMillis = 1;
 //-----------------------------------------------
 
 
 //--------------Peripherals-----------------------
 AS5045 servoEncoder(4,5,6, 1.0, false);
-SMC motorController(Serial); //change this to Serial2
+SMC motorController(Serial, 2, 3); //change this to Serial2
 //-----------------------------------------------
 
 
@@ -70,19 +73,19 @@ void setup(){
 	pinMode(ledPin2, OUTPUT); // visual signal of I/O to chip
 	digitalWrite(ledPin2, LOW);
 
-	servoPositionPID.SetOutputLimits(-motorMaxSpeed, motorMaxSpeed);
-	servoPositionPID.SetSampleTime(servoPositionPIDSampleTimeMillis);
+	servoPositionPID.SetOutputLimits(-1500, 1500);
+	servoPositionPID.SetSampleTime(servoPIDSampleTimeMillis);
 	servoPositionPID.SetMode(AUTOMATIC);
 
-	motorController.setDeadpanSpeed(6);
+	servoVelocityPID.SetOutputLimits(-3200, 3200);
+	servoVelocityPID.SetSampleTime(servoPIDSampleTimeMillis);
+	servoVelocityPID.SetMode(AUTOMATIC);
+
+	motorController.setDeadpanSpeed(3);
+	motorController.initialize();
 }
 
 void loop(){
-	if (firstBoot){
-		//do first boot things
-		firstBoot = false;
-	}
-
 	if (isInitialized){
 		doPIDDuties();	
 	}
@@ -92,7 +95,6 @@ void loop(){
 
 void initialize(){
 	digitalWrite(ledPin2, HIGH); //visual indication of initialization
-	motorController.initialize();
 	isInitialized = true;
 	attachInterrupt(MCU_VirtualShutter_SyncIn_CN_Pin, syncInterrupt, RISING);
 }
@@ -107,8 +109,11 @@ void doPIDDuties(){
 	//until we're hooked up for real let's pretend the PID is doing a GREAT job.
 	//servoCurrentPosition = servoTargetPosition;
 	
-	if (servoPositionPID.Compute()){
-		motorController.setMotorSpeed(motorTargetSpeed);
+	if (!isStopped){
+		servoPositionPID.Compute();
+		if(servoVelocityPID.Compute()){
+			motorController.setMotorSpeed(motorTargetSpeed);	
+		}
 	}
 	
 }
@@ -300,8 +305,7 @@ void processInstructionFromMCU(){
 			break;
 
 		case MocoJoServoSetMaxSpeed:
-			motorMaxSpeed = data;
-			//servoPositionPID.SetOutputLimits(-motorMaxSpeed, motorMaxSpeed);
+			//implement this?
 			break;
 		
 		default:
