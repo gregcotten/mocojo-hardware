@@ -4,6 +4,7 @@
 #include <WProgram.h>
 #include <WString.h>
 
+int _deadpanSpeed = 0;
 
 
 SMC::SMC(HardwareSerial &serial){
@@ -13,7 +14,6 @@ SMC::SMC(HardwareSerial &serial){
 
 void SMC::initialize(){
 	//_serial->begin(SMCProtocolBaudRate);
-	delay(1);
 	_serial->write(0xAA); //SMC needs to establish the baud rate
 }
 
@@ -25,18 +25,26 @@ void SMC::stopMotor(){
 	_serial->write(SMCProtocolStopMotor);
 }
 
+void SMC::setDeadpanSpeed(int dead){
+	_deadpanSpeed = dead;
+}
 
 //speed can be [-3200, 3200]
 void SMC::setMotorSpeed(int speed){
 
 	if (speed >= 0){
 		_serial->write(SMCProtocolSetMotorForward);
+		
+
 	}
 	else {
 		_serial->write(SMCProtocolSetMotorReverse);
 		speed = -speed;
 	}
-
+	speed = speed+_deadpanSpeed;
+	if(speed>3200){
+		speed = 3200;
+	}
 	_serial->write(speed % 32); //speed byte 1
 	_serial->write(speed >> 5); //speed byte 2
 	

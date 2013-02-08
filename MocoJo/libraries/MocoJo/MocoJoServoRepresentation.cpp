@@ -61,6 +61,14 @@ long MocoJoServoRepresentation::getCurrentPosition(){
 	return SerialTools::readLongFromSerial(*_serial);
 }
 
+long MocoJoServoRepresentation::getMotorTargetSpeed(){
+	MocoJoServoCommunication::writeGetMotorTargetSpeedToServo(*_serial, _servoID);
+	SerialTools::blockUntilBytesArrive(*_serial, 6);
+	SerialTools::readDummyBytesFromSerial(*_serial, 2);
+	return SerialTools::readLongFromSerial(*_serial);
+}
+
+
 long MocoJoServoRepresentation::getPositionAtLastSync(){
 	MocoJoServoCommunication::writeGetPositionAtLastSyncToServo(*_serial, _servoID);
 	SerialTools::blockUntilBytesArrive(*_serial, 6);

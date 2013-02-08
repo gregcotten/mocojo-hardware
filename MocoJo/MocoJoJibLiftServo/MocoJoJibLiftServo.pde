@@ -5,6 +5,7 @@
 #include <PID_v1.h>
 #include <LongBuffer.h>
 #include <SMC.h>
+#include <SMCProtocolConstants.h>
 #include <AS5045.h>
 #include <ChangeNotification.h>
 
@@ -49,7 +50,7 @@ int motorMaxSpeed = 3200;
 
 
 
-//PID servoPositionPID(&servoCurrentPosition, &motorTargetSpeed, &servoTargetPosition,1,0,0, DIRECT);
+PID servoPositionPID(&servoCurrentPosition, &motorTargetSpeed, &servoTargetPosition,4,0,0, DIRECT);
 int servoPositionPIDSampleTimeMillis = 1;
 //-----------------------------------------------
 
@@ -61,7 +62,7 @@ SMC motorController(Serial); //change this to Serial2
 
 
 void setup(){
-	Serial.begin(115200);
+	Serial.begin(SMCProtocolBaudRate);
 	Serial1.begin(MocoJoServoBaudRate);
 	
 	pinMode(ledPin1, OUTPUT); // visual signal of I/O to chip
@@ -69,8 +70,11 @@ void setup(){
 	pinMode(ledPin2, OUTPUT); // visual signal of I/O to chip
 	digitalWrite(ledPin2, LOW);
 
-	//servoPositionPID.SetOutputLimits(-motorMaxSpeed, motorMaxSpeed);
-	//servoPositionPID.SetSampleTime(servoPositionPIDSampleTimeMillis);
+	servoPositionPID.SetOutputLimits(-motorMaxSpeed, motorMaxSpeed);
+	servoPositionPID.SetSampleTime(servoPositionPIDSampleTimeMillis);
+	servoPositionPID.SetMode(AUTOMATIC);
+
+	motorController.setDeadpanSpeed(6);
 }
 
 void loop(){
@@ -95,18 +99,18 @@ void initialize(){
 
 void doPIDDuties(){
 	
-	// servoEncoder.update();
-	// servoCurrentPosition = servoEncoder.getAbsolutePosition();
-	// servoCurrentVelocity = servoEncoder.getVelocity();
+	 servoEncoder.update();
+	 servoCurrentPosition = servoEncoder.getAbsolutePosition();
+	 servoCurrentVelocity = servoEncoder.getVelocity();
 
 	//not hooked up to real motor and encoder so don't do this yet - we'll just emulate it!
 	//until we're hooked up for real let's pretend the PID is doing a GREAT job.
-	servoCurrentPosition = servoTargetPosition;
-	/*
-	if (!isStopped && servoPositionPID.Compute()){
+	//servoCurrentPosition = servoTargetPosition;
+	
+	if (servoPositionPID.Compute()){
 		motorController.setMotorSpeed(motorTargetSpeed);
 	}
-	*/
+	
 }
 
 /*
@@ -135,6 +139,7 @@ void syncInterrupt(){
 void exitSafeStart(){
 	motorController.exitSafeStart();
 	isStopped = false;
+	digitalWrite(ledPin1, HIGH);
 }
 
 void stopEverything(){
@@ -142,7 +147,6 @@ void stopEverything(){
 	motorController.stopMotor();
 	servoTargetPosition = servoCurrentPosition;
 	isStopped = true;
-	isHoning = false;
 }
 
 void honeToPosition(long honePosition){
@@ -169,7 +173,7 @@ void startPlayback(){
 	frameCounter = 0;
 	proceedToHone = false;
 
-	Serial.println("Waiting for buffer to fill...");
+	//Serial.println("Waiting for buffer to fill...");
 	while(isPlayback && !servoTargetPositionBuffer.isFull() && !proceedToHone){
 		doPIDDuties();
 		doSerialDuties();
@@ -177,9 +181,9 @@ void startPlayback(){
 	if(!isPlayback){
 		return;
 	}
-	Serial.println("Buffer filled.");
+	//Serial.println("Buffer filled.");
 	
-	Serial.println("Honing to position: " + String(servoTargetPositionBuffer.peek(), DEC));
+	//Serial.println("Honing to position: " + String(servoTargetPositionBuffer.peek(), DEC));
 	honeToPosition(servoTargetPositionBuffer.peek());
 
 	runPlayback();
@@ -193,7 +197,7 @@ void runPlayback(){
 		doPIDDuties();
 	}
 	if(isPlayback){
-		Serial.println("Target Buffer overrun or playback stopped @ frame " + String(frameCounter) +" and position " + String(servoTargetPosition, DEC));
+	//	Serial.println("Target Buffer overrun or playback stopped @ frame " + String(frameCounter) +" and position " + String(servoTargetPosition, DEC));
 		stopPlayback();	
 		
 	}
@@ -208,7 +212,7 @@ void stopPlayback(){
 	servoTargetPosition = servoCurrentPosition;
 	
 	servoTargetPositionBuffer.reset();
-	Serial.println("Playback Stopped!");
+	//Serial.println("Playback Stopped!");
 }
 
 
@@ -268,6 +272,10 @@ void processInstructionFromMCU(){
 			MocoJoServoCommunication::writeCurrentPositionToMCU(Serial1, servoID, servoCurrentPosition);
 			break;
 
+		case MocoJoServoGetMotorTargetSpeed:
+			MocoJoServoCommunication::writeMotorTargetSpeedToMCU(Serial1, servoID, motorTargetSpeed);
+			break;
+
 		case MocoJoServoGetPositionAtLastSync:
 			MocoJoServoCommunication::writePositionAtLastSyncToMCU(Serial1, servoID, servoPositionAtLastSync);
 			break;
@@ -281,11 +289,11 @@ void processInstructionFromMCU(){
 
 		case MocoJoServoAddTargetPositionToBuffer:
 			if(!isPlayback){
-				Serial.println("MCU tried to add to target position buffer when not in playback!");
+			//	Serial.println("MCU tried to add to target position buffer when not in playback!");
 				return;
 			}
 			if(servoTargetPositionBuffer.isFull()){
-				Serial.println("MCU wrote to target position buffer when it was full!");
+			//	Serial.println("MCU wrote to target position buffer when it was full!");
 				stopPlayback();
 			}
 			servoTargetPositionBuffer.addLong(data);	
@@ -297,7 +305,8 @@ void processInstructionFromMCU(){
 			break;
 		
 		default:
-			Serial.println("Instruction Invalid: " + String(instruction, DEC) + " Data: " + String(data, DEC));
+			break;
+			//Serial.println("Instruction Invalid: " + String(instruction, DEC) + " Data: " + String(data, DEC));
 		
 	}
 }

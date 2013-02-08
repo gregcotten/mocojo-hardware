@@ -9,6 +9,7 @@ namespace MocoJoServoCommunication {
 	
 	void writeCurrentPositionToMCU(HardwareSerial &serial, int ID, long currentPosition);
 	void writePositionAtLastSyncToMCU(HardwareSerial &serial, int ID, long positionAtLastSync);
+	void writeMotorTargetSpeedToMCU(HardwareSerial &serial, int ID, long motorTargetSpeed);
 	//--------------
 
 
@@ -24,6 +25,10 @@ namespace MocoJoServoCommunication {
 
 	void writeSetTargetPositionToServo(HardwareSerial &serial, int ID, long targetPosition);
 	void writeAddTargetPositionToBufferToServo(HardwareSerial &serial, int ID, long targetPosition);
+
+	//motor
+	void writeGetMotorTargetSpeedToServo(HardwareSerial &serial, int ID);
+
 	//playback
 	void writeStartPlaybackToServo(HardwareSerial &serial, int ID);
 	void writeStopPlaybackToServo(HardwareSerial &serial, int ID);

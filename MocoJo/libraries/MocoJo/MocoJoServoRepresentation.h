@@ -11,6 +11,7 @@ class MocoJoServoRepresentation{
 		void exitSafeStart();
 		long getCurrentPosition();
 		long getPositionAtLastSync();
+		long getMotorTargetSpeed();
 		long setTargetPosition(long targetPosition);
 		void addTargetPositionToBuffer(long targetPosition);
 		void startPlayback();

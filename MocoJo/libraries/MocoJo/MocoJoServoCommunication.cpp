@@ -20,6 +20,11 @@ void MocoJoServoCommunication::writePositionAtLastSyncToMCU(HardwareSerial &seri
 	(&serial) -> write(MocoJoServoPositionAtLastSync);
 	SerialTools::writeLongToSerial(serial, positionAtLastSync);
 }
+void MocoJoServoCommunication::writeMotorTargetSpeedToMCU(HardwareSerial &serial, int ID, long motorTargetSpeed){
+	(&serial) -> write(ID);
+	(&serial) -> write(MocoJoServoMotorTargetSpeed);
+	SerialTools::writeLongToSerial(serial, motorTargetSpeed);
+}
 
 //----------------------
 
@@ -78,6 +83,14 @@ void MocoJoServoCommunication::writeAddTargetPositionToBufferToServo(HardwareSer
 	(&serial) -> write(ID);
 	(&serial) -> write(MocoJoServoAddTargetPositionToBuffer);
 	SerialTools::writeLongToSerial(serial, targetPosition);
+}
+
+
+//Motor
+void MocoJoServoCommunication::writeGetMotorTargetSpeedToServo(HardwareSerial &serial, int ID){
+	(&serial) -> write(ID);
+	(&serial) -> write(MocoJoServoGetMotorTargetSpeed);
+	SerialTools::writeDummyBytesToSerial(serial, 4);
 }
 
 //playback
