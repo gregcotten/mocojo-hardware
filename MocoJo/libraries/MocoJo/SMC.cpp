@@ -36,6 +36,7 @@ void SMC::resetController(){
 	digitalWrite(_resetPin, LOW);  // reset SMC
 	delay(1);  // wait 1 ms
 	pinMode(_resetPin, INPUT);  // let SMC run again
+	delay(5);
 }
 
 void SMC::setDeadpanSpeed(int dead){
