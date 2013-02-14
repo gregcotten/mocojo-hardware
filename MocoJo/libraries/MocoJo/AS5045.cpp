@@ -21,8 +21,8 @@ long _encoderAbsolutePositionOffset;
 float _encoderSensitivity;
 
 //Velocity Data
-unsigned long _timeSinceLastVelocityUpdate;
-unsigned long _timeInMillisecondsAtLastUpdate;
+unsigned long _timeoutVelocityUpdate;
+unsigned long _timeAtLastVelocityUpdate;
 float _encoderVelocity;
 
 //----------MAGNETIC ENCODER GENERAL-----------
@@ -72,33 +72,51 @@ void AS5045::setAbsolutePosition(long desiredPosition){
   _encoderAbsolutePositionOffset = desiredPosition - _encoderAbsolutePosition;
 }
 
-float AS5045::getVelocity(){
-    _timeSinceLastVelocityUpdate = millis() - _timeInMillisecondsAtLastUpdate;
-  if (_timeSinceLastVelocityUpdate > 20){
-    _encoderVelocity = 1000.0*((float)_encoderAbsolutePosition - (float)_encoderPreviousAbsolutePosition)/((float)_timeSinceLastVelocityUpdate);
-    
-    //debounce the velocity!
-    if(abs(_encoderAbsolutePosition - _encoderPreviousAbsolutePosition) <= 1){
-      _encoderVelocity = 0;
-    }
-
-    _encoderPreviousAbsolutePosition = _encoderAbsolutePosition;
-    _timeInMillisecondsAtLastUpdate = millis();
-  }
+long AS5045::getVelocity(){
   return _encoderVelocity;
 }
 
 //Currently takes 110 microseconds to update @ chipKIT 96MHz
 void AS5045::update(){
-	digitalWrite(_encoderChipSelectPin, HIGH); // CSn high
+  updatePosition();
+  updateVelocity();	
+
+  if (_encoderDebug == true){
+    checkErrors();
+  }
+
+}
+
+void AS5045::updateVelocity(){
+  unsigned long currentTimeMillis = millis();
+  if(_encoderPreviousAbsolutePosition != _encoderAbsolutePosition){
+    _encoderVelocity = (long)(1000.0*(double)(_encoderAbsolutePosition-_encoderPreviousAbsolutePosition) / (double)(currentTimeMillis - _timeAtLastVelocityUpdate));
+    
+    _encoderPreviousAbsolutePosition = _encoderAbsolutePosition;
+
+    _timeoutVelocityUpdate = currentTimeMillis;
+    _timeAtLastVelocityUpdate = currentTimeMillis;
+  }
+  else{
+    if(currentTimeMillis -_timeoutVelocityUpdate > 2){
+      _encoderVelocity = 0;
+      _encoderPreviousAbsolutePosition = _encoderAbsolutePosition;
+      
+      _timeoutVelocityUpdate = currentTimeMillis;
+      _timeAtLastVelocityUpdate = currentTimeMillis;
+    }
+  }
+}
+
+void AS5045::updatePosition(){
+  digitalWrite(_encoderChipSelectPin, HIGH); // CSn high
   digitalWrite(_encoderClockPin, HIGH); // CLK high
   delayMicroseconds(shortdelay);
-  //digitalWrite(ledPin, HIGH); // signal start of transfer with LED
   digitalWrite(_encoderChipSelectPin, LOW); // CSn low: start of transfer
   delayMicroseconds(shortdelay); // delay for chip initialization
   digitalWrite(_encoderClockPin, LOW); // CLK goes low: start clocking
   delayMicroseconds(shortdelay*2); // hold low
- 
+
   for (int x=0; x <18; x++) // clock signal, 18 transitions, output to clock pin
   {
     digitalWrite(_encoderClockPin, HIGH); //clock goes high
@@ -108,12 +126,11 @@ void AS5045::update(){
     digitalWrite(_encoderClockPin, LOW);
     delayMicroseconds(shortdelay); // end of one clock cycle
   }
-  //digitalWrite(ledPin, LOW); // signal end of transmission
-  
+
   _encoderRelativePosition = (packeddata & relativePositionMask) >> 6; // mask rightmost 6 digits of packeddata to zero, into angle. and shift 18-digit angle right 6 digits to form 12-digit value
 
   //Serial.println(controllerPanEncoder_AbsolutePosition,DEC);
-  
+
   //detect a revolution!
   if (_encoderPreviousRelativePosition > 3900 && _encoderRelativePosition < 195) { //it did a clockwise rev
     _encoderRevolutionCount++;
@@ -121,26 +138,18 @@ void AS5045::update(){
   else if (_encoderPreviousRelativePosition < 195 && _encoderRelativePosition > 3900) { //it did a counter-clockwise rev
     _encoderRevolutionCount--;
   }
-  
+
   if(_encoderSensitivity != 1.0){
     _encoderAbsolutePosition = (float)(_encoderRelativePosition + 4096*_encoderRevolutionCount) * _encoderSensitivity;  
   }
   else{
     _encoderAbsolutePosition = _encoderRelativePosition + 4096*_encoderRevolutionCount;   
   }
-  
-  
-  _encoderPreviousRelativePosition = _encoderRelativePosition;
-  
 
-  
+
+  _encoderPreviousRelativePosition = _encoderRelativePosition;
 
   packeddata = 0; // reset to zero so it doesn't accumulate ???
-
-  if (_encoderDebug == true){
-    checkErrors();
-  }
-
 }
 
 void AS5045::checkErrors(){

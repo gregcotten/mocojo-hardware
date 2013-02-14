@@ -8,11 +8,14 @@ class AS5045{
 	public:
 		AS5045(int chipSelect, int clock, int input, float sensitivity, int debug);
 		void update();
+		
 		int getRelativePosition();
 		long getAbsolutePosition();
 		void setAbsolutePosition(long desiredPosition);
-		float getVelocity();
+		long getVelocity();
 	private:
+		void updatePosition();
+		void updateVelocity();
 		void checkErrors();
 		
 		
@@ -33,9 +36,9 @@ class AS5045{
 		float _encoderSensitivity;
 
 		//Velocity Data
-		unsigned long _timeSinceLastVelocityUpdate;
+		unsigned long _timeAtLastVelocityUpdate;
 		unsigned long _timeInMillisecondsAtLastUpdate;
-		float _encoderVelocity;
+		long _encoderVelocity;
 
 		//Backend
 		int inputstream; //one bit read from pin
