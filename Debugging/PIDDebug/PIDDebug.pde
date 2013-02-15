@@ -15,10 +15,10 @@ long servoTargetPosition = 0;
 long servoTargetVelocity = 0;
 long motorTargetSpeed = 0;
 
-PID servoPositionPID(&servoCurrentPosition, &motorTargetSpeed, &servoTargetPosition,15,15,0, DIRECT);
+PID servoPositionPID(&servoCurrentPosition, &motorTargetSpeed, &servoTargetPosition,14,0,0, DIRECT);
 const int servoPIDSampleTimeMillis = 1;
 
-AS5045 tiltEncoder(8,9,10, .5, false);
+AS5045 tiltEncoder(8,9,10, 4, false);
 
 AS5045 servoEncoder(4,5,6, 1.0, false);
 SMC motorController(Serial1, 2, 3); //change this to Serial2
@@ -27,11 +27,11 @@ void setup(){
 	Serial.begin(115200);
 	Serial1.begin(250000);
 
-	servoPositionPID.SetOutputLimits(-1600, 1600);
+	servoPositionPID.SetOutputLimits(-2500, 2500);
 	servoPositionPID.SetSampleTime(servoPIDSampleTimeMillis);
 	servoPositionPID.SetMode(AUTOMATIC);
 
-	motorController.setDeadpanSpeed(3);
+	motorController.setDeadpanSpeed(136); //136 = 4.25% power
 	motorController.initialize();
 	motorController.exitSafeStart();
 	
