@@ -68,7 +68,7 @@ void SMC::setMotorSpeed(int speed){
 		speed = 3200;
 	}
 	
-	if(_deadpanSpeed > 0){
+	if(_deadpanSpeed > 0 && speed != 0){
 		speed = map(speed, 0, 3200, _deadpanSpeed, 3200);	
 	}
 	
