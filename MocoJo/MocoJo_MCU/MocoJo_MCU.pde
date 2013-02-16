@@ -5,6 +5,7 @@
 #include <MocoJoServoRepresentation.h>
 #include <MocoJoServoProtocol.h>
 #include <Logger.h>
+#include <AS5045.h>
 
 #define FRAMERATE 50
 
@@ -41,11 +42,17 @@ long amountFreshBufferCounter;
 //----------------------------------------------
 
 //--------------Moco GPIO------------------------
-const int MCU_VirtualShutter_SyncOut_Pin = 10; //HIGH is shutter off cycle, LOW is shutter on cycle
+const int MCU_VirtualShutter_SyncOut_Pin = 2; //HIGH is shutter off cycle, LOW is shutter on cycle
+//----------------------------------------------
+
+//--------------Wheels--------------------------
+AS5045 tiltEncoder(8,9,10, .5, false);
 //----------------------------------------------
 
 //---------------AXIS DATA--------------------
 MocoJoServoRepresentation servoJibLift(Serial1, MocoAxisJibLift);
+
+unsigned long timeAtLastServoManualUpdate = 0;
 
 
 
@@ -60,8 +67,12 @@ void setup()
 	digitalWrite(ledPin1, LOW);
 	pinMode(ledPin2, OUTPUT); // visual signal of I/O to chip
 	digitalWrite(ledPin2, LOW);
+	
+	//config virtual shutter
 	pinMode(MCU_VirtualShutter_SyncOut_Pin, OUTPUT);
-	setVirtualShutter(LOW);
+	digitalWrite(MCU_VirtualShutter_SyncOut_Pin, LOW);
+
+	tiltEncoder.setAbsolutePosition(0);
 }
 
 void loop()
@@ -81,11 +92,14 @@ void loop()
 void doGeneralDuties(){
 	
 	//update pan/tilt wheels and any other inputs
+	tiltEncoder.update();
 	
-	
-	//send position data to MCUs
+	//send position data to servos
 	if (!isPlayback){
-		
+		if(millis() - timeAtLastServoManualUpdate > 20){
+			servoJibLift.setTargetPosition(tiltEncoder.getAbsolutePosition());
+			timeAtLastServoManualUpdate = millis();
+		}
 	}
 }
 
@@ -194,11 +208,27 @@ void startPlaybackFromComputer()
 
 	servoJibLift.proceedToHone();
 	
+	unsigned long lastHoneCheck = millis()
+	boolean allDidHone = false;
+
+	while(isPlayback && !allDidHone){
+		if(lastHoneCheck - millis() >= 500){
+			allDidHone = !servoJibLift.isHoning(); // && servo2 && ...
+			
+			lastHoneCheck= millis();
+		}
+		doGeneralDuties();
+		doSerialDuties();
+	}
+	
 	//*********** END FIRST BUFFER ***********
 
 	//      TODO: Wait for hone to finish
 
 	//*********** PLAYBACK LOOP BEGIN ***********
+	if(!isPlayback){
+		return;
+	}
 	MocoTimer1::set(1.0/50.0, playbackShutterDidFire);
 	MocoTimer1::start();
 	MocoJoCommunication::writePlaybackHasStartedToComputer();
@@ -274,20 +304,13 @@ void writeServoResolutionsToComputer()
 
 
 /*
-	Sets the shutter SYNC OUT logic level value.
-*/
-void setVirtualShutter(int value){
-	digitalWrite(MCU_VirtualShutter_SyncOut_Pin, value);
-}
-
-/*
 	Do the shutter!
 */
 
 void shutterFire(){
-	setVirtualShutter(LOW);
+	digitalWrite(MCU_VirtualShutter_SyncOut_Pin, LOW);
 	delay(1);
-	setVirtualShutter(HIGH);
+	digitalWrite(MCU_VirtualShutter_SyncOut_Pin, HIGH);
 }
 
 
