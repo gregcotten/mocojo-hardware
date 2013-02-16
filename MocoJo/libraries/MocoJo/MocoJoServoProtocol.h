@@ -24,7 +24,8 @@ enum{
 enum{
 	MocoJoServoGetCurrentPosition = 6,
 	MocoJoServoGetPositionAtLastSync = 7,
-	MocoJoServoGetMotorTargetSpeed = 21
+	MocoJoServoGetMotorTargetSpeed = 21,
+	MocoJoServoGetIsHoning = 22
 };
 
 //Setters
@@ -39,7 +40,8 @@ enum{
 enum{
 	MocoJoServoCurrentPosition = 12,
 	MocoJoServoPositionAtLastSync = 13,
-	MocoJoServoMotorTargetSpeed = 20
+	MocoJoServoMotorTargetSpeed = 20,
+	MocoJoServoIsHoning = 23
 };
 
 

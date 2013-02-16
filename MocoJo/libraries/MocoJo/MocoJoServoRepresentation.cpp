@@ -54,6 +54,7 @@ int MocoJoServoRepresentation::getServoID(){
 	return _servoID;
 }
 
+
 long MocoJoServoRepresentation::getCurrentPosition(){
 	MocoJoServoCommunication::writeGetCurrentPositionToServo(*_serial, _servoID);
 	SerialTools::blockUntilBytesArrive(*_serial, 6);
@@ -77,8 +78,10 @@ long MocoJoServoRepresentation::getPositionAtLastSync(){
 }
 
 boolean MocoJoServoRepresentation::isHoning(){
-	//implement later!
-	return true;
+	MocoJoServoCommunication::writeGetIsHoningToServo(*_serial, _servoID);
+	SerialTools::blockUntilBytesArrive(*_serial, 6);
+	SerialTools::readDummyBytesFromSerial(*_serial, 2);
+	return SerialTools::readLongFromSerial(*_serial) == 1;
 }
 
 //-----------

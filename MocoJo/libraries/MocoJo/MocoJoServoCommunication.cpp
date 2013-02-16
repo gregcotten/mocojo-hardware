@@ -26,6 +26,18 @@ void MocoJoServoCommunication::writeMotorTargetSpeedToMCU(HardwareSerial &serial
 	SerialTools::writeLongToSerial(serial, motorTargetSpeed);
 }
 
+void MocoJoServoCommunication::writeIsHoningToMCU(HardwareSerial &serial, int ID, boolean isHoning){
+	(&serial) -> write(ID);
+	(&serial) -> write(MocoJoServoIsHoning);
+	if(isHoning){
+		SerialTools::writeLongToSerial(serial, 1);
+	}
+	else{
+		SerialTools::writeLongToSerial(serial, 0);
+	}
+	
+}
+
 //----------------------
 
 //MCU to SERVO
@@ -94,6 +106,12 @@ void MocoJoServoCommunication::writeGetMotorTargetSpeedToServo(HardwareSerial &s
 }
 
 //playback
+void MocoJoServoCommunication::writeGetIsHoningToServo(HardwareSerial &serial, int ID){
+	(&serial) -> write(ID);
+	(&serial) -> write(MocoJoServoGetIsHoning);
+	SerialTools::writeDummyBytesToSerial(serial, 4);
+}
+
 void MocoJoServoCommunication::writeStartPlaybackToServo(HardwareSerial &serial, int ID){
 	(&serial) -> write(ID);
 	(&serial) -> write(MocoJoServoStartPlayback);
