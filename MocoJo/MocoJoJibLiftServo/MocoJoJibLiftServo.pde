@@ -52,8 +52,8 @@ boolean proceedToHone = false;
 
 
 //PID
-PID servoPositionPID(&servoCurrentPosition, &servoTargetVelocity, &servoTargetPosition,4,0,0, DIRECT);
-PID servoVelocityPID(&servoCurrentVelocity, &motorTargetSpeed, &servoTargetVelocity,4,0,0, DIRECT);
+PID servoPositionPID(&servoCurrentPosition, &motorTargetSpeed, &servoTargetPosition,15,0,0, DIRECT);
+
 const int servoPIDSampleTimeMillis = 1;
 //-----------------------------------------------
 
@@ -65,7 +65,7 @@ SMC motorController(Serial, 2, 3); //change this to Serial2
 
 
 void setup(){
-	Serial.begin(SMCProtocolBaudRate);
+	Serial.begin(400000);
 	Serial1.begin(MocoJoServoBaudRate);
 	
 	pinMode(ledPin1, OUTPUT); // visual signal of I/O to chip
@@ -73,16 +73,14 @@ void setup(){
 	pinMode(ledPin2, OUTPUT); // visual signal of I/O to chip
 	digitalWrite(ledPin2, LOW);
 
-	servoPositionPID.SetOutputLimits(-1500, 1500);
+	servoPositionPID.SetOutputLimits(-3200, 3200);
 	servoPositionPID.SetSampleTime(servoPIDSampleTimeMillis);
 	servoPositionPID.SetMode(AUTOMATIC);
 
-	servoVelocityPID.SetOutputLimits(-3200, 3200);
-	servoVelocityPID.SetSampleTime(servoPIDSampleTimeMillis);
-	servoVelocityPID.SetMode(AUTOMATIC);
+	servoEncoder.setAbsolutePosition(0);
 
-	motorController.setDeadpanSpeed(3);
-	motorController.initialize();
+	motorController.setDeadpanSpeed(160);
+	
 }
 
 void loop(){
@@ -97,6 +95,11 @@ void initialize(){
 	digitalWrite(ledPin2, HIGH); //visual indication of initialization
 	isInitialized = true;
 	attachInterrupt(MCU_VirtualShutter_SyncIn_CN_Pin, syncInterrupt, RISING);
+
+	motorController.initialize();
+	motorController.exitSafeStart();
+	isStopped = false;
+	digitalWrite(ledPin1, HIGH); //visual indication of motor started up
 }
 
 void doPIDDuties(){
@@ -104,16 +107,9 @@ void doPIDDuties(){
 	 servoEncoder.update();
 	 servoCurrentPosition = servoEncoder.getAbsolutePosition();
 	 servoCurrentVelocity = servoEncoder.getVelocity();
-
-	//not hooked up to real motor and encoder so don't do this yet - we'll just emulate it!
-	//until we're hooked up for real let's pretend the PID is doing a GREAT job.
-	//servoCurrentPosition = servoTargetPosition;
 	
-	if (!isStopped){
-		servoPositionPID.Compute();
-		if(servoVelocityPID.Compute()){
-			motorController.setMotorSpeed(motorTargetSpeed);	
-		}
+	if(servoPositionPID.Compute() && !isStopped){
+		motorController.setMotorSpeed(motorTargetSpeed);	
 	}
 	
 }
@@ -141,11 +137,6 @@ void syncInterrupt(){
 	}
 }
 
-void exitSafeStart(){
-	motorController.exitSafeStart();
-	isStopped = false;
-	digitalWrite(ledPin1, HIGH);
-}
 
 void stopEverything(){
 	stopPlayback();
@@ -161,11 +152,13 @@ void honeToPosition(long honePosition){
 	// **servoPositionPID - make sure to change parameters for slow mode!
 
 	//also put servoVelocity != 0
-	while (isPlayback && isHoning && servoCurrentPosition != servoTargetPosition){
+	servoPositionPID.SetOutputLimits(-300, 300);
+	while (isPlayback && servoCurrentPosition != servoTargetPosition){
 		doPIDDuties();
 		doSerialDuties();
 	}
 	isHoning = false;
+	servoPositionPID.SetOutputLimits(-3200, 3200);
 
 	// **servoPositionPID - make sure to change parameters for normal mode!
 }
@@ -257,7 +250,7 @@ void processInstructionFromMCU(){
 			break;
 	
 		case MocoJoServoExitSafeStart:
-			exitSafeStart();
+			//exitSafeStart();
 			break;
 
 		//Playback:
@@ -283,6 +276,10 @@ void processInstructionFromMCU(){
 
 		case MocoJoServoGetPositionAtLastSync:
 			MocoJoServoCommunication::writePositionAtLastSyncToMCU(Serial1, servoID, servoPositionAtLastSync);
+			break;
+
+		case MocoJoServoGetIsHoning:
+			MocoJoServoCommunication::writeIsHoningToMCU(Serial1, servoID, isHoning);
 			break;
 
 		//SETTERS:
