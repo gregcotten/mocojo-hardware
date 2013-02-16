@@ -69,6 +69,7 @@ long AS5045::getAbsolutePosition(){
 }
 
 void AS5045::setAbsolutePosition(long desiredPosition){
+  update();
   _encoderAbsolutePositionOffset = desiredPosition - _encoderAbsolutePosition;
 }
 
@@ -88,24 +89,14 @@ void AS5045::update(){
 }
 
 void AS5045::updateVelocity(){
-  unsigned long currentTimeMillis = millis();
-  if(_encoderPreviousAbsolutePosition != _encoderAbsolutePosition){
-    _encoderVelocity = (long)(1000.0*(double)(_encoderAbsolutePosition-_encoderPreviousAbsolutePosition) / (double)(currentTimeMillis - _timeAtLastVelocityUpdate));
-    
-    _encoderPreviousAbsolutePosition = _encoderAbsolutePosition;
 
-    _timeoutVelocityUpdate = currentTimeMillis;
+  unsigned long currentTimeMillis = micros();
+  if (currentTimeMillis - _timeAtLastVelocityUpdate >= 5000){
+    _encoderVelocity = (long)(10000.0*(double)(_encoderAbsolutePosition-_encoderPreviousAbsolutePosition) / (double)(currentTimeMillis - _timeAtLastVelocityUpdate));
     _timeAtLastVelocityUpdate = currentTimeMillis;
+    _encoderPreviousAbsolutePosition = _encoderAbsolutePosition;
   }
-  else{
-    if(currentTimeMillis -_timeoutVelocityUpdate > 2){
-      _encoderVelocity = 0;
-      _encoderPreviousAbsolutePosition = _encoderAbsolutePosition;
-      
-      _timeoutVelocityUpdate = currentTimeMillis;
-      _timeAtLastVelocityUpdate = currentTimeMillis;
-    }
-  }
+  
 }
 
 void AS5045::updatePosition(){
