@@ -1,6 +1,6 @@
 #include <AS5045.h>
 
-AS5045 encoder(4,5,6, 1.0, false);
+AS5045 encoder(8,9,10, 1.0, false);
 unsigned long then;
 
 unsigned long sampleThen;
@@ -15,10 +15,13 @@ void loop(){
 	encoder.update();
 	//Serial.println(micros() - sampleThen);
 	
-	if(millis() - then >= 20){
-		Serial.println("Position: " + String(encoder.getAbsolutePosition(), DEC) + " Velocity: " + String((int)encoder.getVelocity(), DEC));
+	
+	if(millis() - then >= 10){
+		Serial.println("P " + String(encoder.getAbsolutePosition(), DEC) + " R " + String(encoder.getRelativePosition(), DEC));
+		//Serial.println(encoder.getVelocity());	
 		then = millis();	
 	}
+	
 	
 }
 

@@ -1,10 +1,13 @@
 #include <MocoProtocolConstants.h>
 #include <MocoJoServoRepresentation.h>
 #include <MocoJoServoProtocol.h>
+#include <AS5045.h>
 
 MocoJoServoRepresentation servoJibLift(Serial1, MocoAxisJibLift);
+AS5045 tiltEncoder(8,9,10, .5, false);
 
 int syncOutPin = 2;
+unsigned long timeAtLastSerialUpdate = 0;
 
 void setup(){
 	pinMode(syncOutPin, OUTPUT);
@@ -15,13 +18,27 @@ void setup(){
 	if (servoJibLift.handshake()){
 		Serial.println("hands shook!");
 	}
+	delay(5);
 	//servoJibLift.exitSafeStart();
-	servoJibLift.setTargetPosition(4096);
-
-	delay(100);
+	tiltEncoder.setAbsolutePosition(0);
 
 }
 void loop(){
-	Serial.println(servoJibLift.getMotorTargetSpeed());
-	delay(100);
+	updateInputEncoders();
+	if(millis() - timeAtLastSerialUpdate > 20){
+		long currentPosition = servoJibLift.getCurrentPosition();
+		Serial.println("CP" + String(currentPosition, DEC) + " TP" + String(tiltEncoder.getAbsolutePosition(), DEC) + " D" + String(tiltEncoder.getAbsolutePosition()-currentPosition, DEC) + " TM" + String(servoJibLift.getMotorTargetSpeed(), DEC));
+		//Serial.println(servoTargetPosition-servoCurrentPosition);
+		//servoTargetPosition+=1;
+		servoJibLift.setTargetPosition(tiltEncoder.getAbsolutePosition());
+		timeAtLastSerialUpdate = millis();
+	}
+	
+}
+
+
+
+void updateInputEncoders(){
+	tiltEncoder.update();
+	 
 }
