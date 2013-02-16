@@ -72,7 +72,7 @@ void setup()
 	pinMode(MCU_VirtualShutter_SyncOut_Pin, OUTPUT);
 	digitalWrite(MCU_VirtualShutter_SyncOut_Pin, LOW);
 
-	tiltEncoder.setAbsolutePosition(0);
+	tiltEncoder.setAbsolutePosition(servoJibLift.getCurrentPosition());
 }
 
 void loop()
@@ -208,7 +208,7 @@ void startPlaybackFromComputer()
 
 	servoJibLift.proceedToHone();
 	
-	unsigned long lastHoneCheck = millis()
+	unsigned long lastHoneCheck = millis();
 	boolean allDidHone = false;
 
 	while(isPlayback && !allDidHone){
@@ -266,6 +266,7 @@ void stopPlaybackFromComputer()
 	digitalWrite(ledPin1, LOW);
 
 	servoJibLift.stopPlayback();
+	tiltEncoder.setAbsolutePosition(servoJibLift.getCurrentPosition());
 }
 
 void playbackShutterDidFire()
