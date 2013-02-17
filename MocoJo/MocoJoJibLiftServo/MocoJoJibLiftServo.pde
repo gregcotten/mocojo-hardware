@@ -109,6 +109,10 @@ void doPIDDuties(){
 	 servoCurrentVelocity = servoEncoder.getVelocity();
 	
 	if(servoPositionPID.Compute() && !isStopped){
+		if(abs(servoTargetPosition - servoCurrentPosition) <= 1){
+			//be at peace if you are only 1 away! essentially a debounce.
+			motorTargetSpeed = 0;
+		}
 		motorController.setMotorSpeed(motorTargetSpeed);	
 	}
 	
@@ -230,7 +234,11 @@ void processInstructionFromMCU(){
 	long data = SerialTools::readLongFromSerial(Serial1);
 
 	//if it's not a handshake or initialization request ignore the instruction!
-
+	if(!isInitialized){
+		if (instruction != MocoJoServoHandshakeRequest || instruction != MocoJoServoInitializeRequest){
+			return;
+		}
+	}
 	//Serial.println("instruction: " + String(instruction, DEC));
 	//Serial.println("data: " + String(data, DEC));
 	switch(instruction){
