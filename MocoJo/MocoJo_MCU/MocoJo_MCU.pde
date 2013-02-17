@@ -98,7 +98,9 @@ void doGeneralDuties(){
 	//send position data to servos
 	if (!isPlayback && isInitialized && wheelsEnabled){
 		if(millis() - timeAtLastServoManualUpdate >= 10){
-			servoJibLift.setTargetPosition(tiltEncoder.getAbsolutePosition());
+			if(servoJibLift.isInitialized()){
+				servoJibLift.setTargetPosition(tiltEncoder.getAbsolutePosition());	
+			}
 			timeAtLastServoManualUpdate = millis();
 		}
 	}
