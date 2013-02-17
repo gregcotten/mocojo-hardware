@@ -231,7 +231,10 @@ void processInstructionFromMCU(){
 
 	//if it's not a handshake or initialization request ignore the instruction!
 	if(!isInitialized){
-		if (instruction != MocoJoServoHandshakeRequest || instruction != MocoJoServoInitializeRequest){
+		if (instruction == MocoJoServoHandshakeRequest || instruction == MocoJoServoInitializeRequest){
+			//do nothing
+		}
+		else{
 			return;
 		}
 	}
