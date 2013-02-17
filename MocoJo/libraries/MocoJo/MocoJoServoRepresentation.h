@@ -18,9 +18,11 @@ class MocoJoServoRepresentation{
 		void stopPlayback();
 		void proceedToHone();
 		boolean isHoning();
+		boolean isInitialized();
 
 	private:
 		void initialize();
+		boolean _isInitialized;
 		HardwareSerial* _serial; //pointer for what serial to use
 };
 #endif

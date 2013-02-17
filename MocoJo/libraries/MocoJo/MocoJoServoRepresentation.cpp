@@ -4,6 +4,7 @@
 #include <SerialTools.h>
 
 int _servoID = 0;
+boolean _isInitialized = false;
 
 
 
@@ -25,8 +26,12 @@ boolean MocoJoServoRepresentation::handshake(){
 
 void MocoJoServoRepresentation::initialize(){
 	MocoJoServoCommunication::writeInitializeToServo(*_serial, _servoID);
+	_isInitialized = true;
 }
 
+boolean MocoJoServoRepresentation::isInitialized(){
+	return _isInitialized;
+}
 //----------------
 
 //PLAYBACK
