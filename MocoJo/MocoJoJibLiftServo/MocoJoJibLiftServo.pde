@@ -109,10 +109,6 @@ void doPIDDuties(){
 	 servoCurrentVelocity = servoEncoder.getVelocity();
 	
 	if(servoPositionPID.Compute() && !isStopped){
-		if(abs(servoTargetPosition - servoCurrentPosition) <= 1){
-			//be at peace if you are only 1 away! essentially a debounce.
-			motorTargetSpeed = 0;
-		}
 		motorController.setMotorSpeed(motorTargetSpeed);	
 	}
 	
