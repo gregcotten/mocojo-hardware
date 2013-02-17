@@ -33,6 +33,7 @@ boolean firstBoot = true;
 boolean isInitialized = false;
 boolean isStreaming = false;
 boolean isPlayback = false;
+boolean wheelsEnabled = true;
 
 //PLAYBACK
 long finalFrame;
@@ -95,8 +96,8 @@ void doGeneralDuties(){
 	tiltEncoder.update();
 	
 	//send position data to servos
-	if (!isPlayback){
-		if(millis() - timeAtLastServoManualUpdate > 20){
+	if (!isPlayback && isInitialized && wheelsEnabled){
+		if(millis() - timeAtLastServoManualUpdate >= 10){
 			servoJibLift.setTargetPosition(tiltEncoder.getAbsolutePosition());
 			timeAtLastServoManualUpdate = millis();
 		}
