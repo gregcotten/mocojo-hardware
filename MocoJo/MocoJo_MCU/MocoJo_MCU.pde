@@ -72,7 +72,7 @@ void setup()
 	pinMode(MCU_VirtualShutter_SyncOut_Pin, OUTPUT);
 	digitalWrite(MCU_VirtualShutter_SyncOut_Pin, LOW);
 
-	tiltEncoder.setAbsolutePosition(servoJibLift.getCurrentPosition());
+	
 }
 
 void loop()
@@ -125,6 +125,7 @@ void initialize()
 	digitalWrite(ledPin2, HIGH); //visual indication of initialization
 	
 	servoJibLift.handshake();
+	tiltEncoder.setAbsolutePosition(servoJibLift.getCurrentPosition());
 }
 
 /*
