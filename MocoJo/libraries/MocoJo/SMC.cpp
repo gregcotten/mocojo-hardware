@@ -4,7 +4,9 @@
 #include <WProgram.h>
 #include <WString.h>
 
-int _deadpanSpeed = 0;
+//default min/max
+int _minimumSpeed = 0;
+int _maximumSpeed = 3200;
 
 
 SMC::SMC(HardwareSerial &serial, int resetPin, int errorPin){
@@ -39,15 +41,25 @@ void SMC::resetController(){
 	delay(5);
 }
 
-void SMC::setDeadpanSpeed(int dead){
-	if (dead < 0){
-		dead = 0;
+void SMC::setMinimumSpeed(int min){
+	if (min < 0){
+		min = 0;
 	}
-	else if (dead > 3200){
-		_deadpanSpeed = 3200;
+	else if (min > 3200){
+		min = 3200;
 	}
-	_deadpanSpeed = dead;	
+	_minimumSpeed = min;	
 	
+}
+
+void SMC::setMaximumSpeed(int max){
+	if (max < 0){
+		max = 0;
+	}
+	else if (max > 3200){
+		max = 3200;
+	}
+	_maximumSpeed = max;
 }
 
 //speed can be [-3200, 3200]
@@ -68,10 +80,9 @@ void SMC::setMotorSpeed(int speed){
 		speed = 3200;
 	}
 	
-	if(_deadpanSpeed > 0 && speed != 0){
-		speed = map(speed, 0, 3200, _deadpanSpeed, 3200);	
+	if(speed != 0 && (_minimumSpeed > 0 || _maximumSpeed < 3200)){
+		speed = map(speed, 0, 3200, _minimumSpeed, _maximumSpeed);	
 	}
-	
 	
 	_serial->write(speed & 0x1F); //speed byte 1
 	_serial->write(speed >> 5); //speed byte 2

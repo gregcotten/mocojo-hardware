@@ -11,12 +11,14 @@ class SMC{
 		void setMotorSpeed(int speed);
 		void exitSafeStart();
 		void stopMotor();
-		void setDeadpanSpeed(int dead);
+		void setMinimumSpeed(int min);
+		void setMaximumSpeed(int max);
 	private:
 		int getVariable(int variableID);
 		void resetController();
 		HardwareSerial* _serial; //pointer for what serial to use
-		int _deadPanSpeed;
+		int _minimumSpeed;
+		int _maximumSpeed;
 		int _errorPin;
 		int _resetPin;
 };

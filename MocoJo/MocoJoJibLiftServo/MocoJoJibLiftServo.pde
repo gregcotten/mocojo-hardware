@@ -79,7 +79,7 @@ void setup(){
 
 	servoEncoder.setAbsolutePosition(0);
 
-	motorController.setDeadpanSpeed(160);
+	motorController.setMinimumSpeed(160);
 	
 }
 
@@ -147,18 +147,19 @@ void stopEverything(){
 
 void honeToPosition(long honePosition){
 	isHoning = true;
-	servoTargetPosition = honePosition;
+	
 
 	// **servoPositionPID - make sure to change parameters for slow mode!
 
 	//also put servoVelocity != 0
-	servoPositionPID.SetOutputLimits(-300, 300);
+	motorController.setMaximumSpeed(300);
+	servoTargetPosition = honePosition;
 	while (isPlayback && servoCurrentPosition != servoTargetPosition){
 		doPIDDuties();
 		doSerialDuties();
 	}
 	isHoning = false;
-	servoPositionPID.SetOutputLimits(-3200, 3200);
+	motorController.setMaximumSpeed(3200);
 
 	// **servoPositionPID - make sure to change parameters for normal mode!
 }
