@@ -139,8 +139,7 @@ void AS5045::updatePosition(){
 
 
   _encoderPreviousRelativePosition = _encoderRelativePosition;
-
-  packeddata = 0; // reset to zero so it doesn't accumulate ???
+  
 }
 
 void AS5045::checkErrors(){
