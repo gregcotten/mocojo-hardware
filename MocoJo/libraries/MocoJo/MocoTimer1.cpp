@@ -10,7 +10,7 @@ unsigned long MocoTimer1::period;
 void (*MocoTimer1::function)();
 
 void MocoTimer1::set(float timeInSeconds, void (*func)()) {
-	period = (unsigned long)((timeInSeconds*80000000.0)/256.0) - 1;
+	period = (unsigned long) (((timeInSeconds*80000000.0)/256.0) - 1.0);
 	function = func;
 }
 
