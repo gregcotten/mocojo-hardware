@@ -1,6 +1,6 @@
 #include <AS5045.h>
 
-AS5045 encoder(8,9,10, 1.0, false);
+AS5045 encoder(4,5,6, 1.0, false);
 unsigned long then;
 
 unsigned long sampleThen;
