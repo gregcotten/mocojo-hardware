@@ -3,7 +3,7 @@
 #include <WProgram.h>
 #include <WString.h>
 
-int _encoderDebug;
+boolean _encoderDebug;
 
 
 //Pins
@@ -40,7 +40,7 @@ int shortdelay = 1; // this is the microseconds of delay in the data clock
 
 //----------------------------------------------
 
-AS5045::AS5045(int chipSelect, int clockpin, int input, float sensitivity, int debug){
+AS5045::AS5045(int chipSelect, int clockpin, int input, float sensitivity, boolean debug){
 	_encoderChipSelectPin = chipSelect;
 	_encoderClockPin = clockpin;
 	_encoderInputPin = input;
@@ -80,11 +80,12 @@ long AS5045::getVelocity(){
 //Currently takes 110 microseconds to update @ chipKIT 96MHz
 void AS5045::update(){
   updatePosition();
-  updateVelocity();	
+  //updateVelocity();	
 
   if (_encoderDebug == true){
     checkErrors();
   }
+  packeddata = 0;
 
 }
 
@@ -123,10 +124,10 @@ void AS5045::updatePosition(){
   //Serial.println(controllerPanEncoder_AbsolutePosition,DEC);
 
   //detect a revolution!
-  if (_encoderPreviousRelativePosition > 3900 && _encoderRelativePosition < 195) { //it did a clockwise rev
+  if (_encoderPreviousRelativePosition > 3896 && _encoderRelativePosition < 200) { //it did a clockwise rev
     _encoderRevolutionCount++;
   } 
-  else if (_encoderPreviousRelativePosition < 195 && _encoderRelativePosition > 3900) { //it did a counter-clockwise rev
+  else if (_encoderPreviousRelativePosition < 200 && _encoderRelativePosition > 3896) { //it did a counter-clockwise rev
     _encoderRevolutionCount--;
   }
 
@@ -140,6 +141,7 @@ void AS5045::updatePosition(){
 
   _encoderPreviousRelativePosition = _encoderRelativePosition;
   
+  
 }
 
 void AS5045::checkErrors(){
@@ -149,14 +151,14 @@ void AS5045::checkErrors(){
     LIN = statusbits & 8; // goes high for linearity alarm
     COF = statusbits & 16; // goes high for cordic overflow: data invalid
     OCF = statusbits & 32; // this is 1 when the chip startup is finished.
-    if (DECn && INCn) { 
+    if (DECn == 1 && INCn == 1) { 
     Serial.println("magnet moved out of range"); 
     }
     else
     {
-      if (DECn) { Serial.println("magnet moved away from chip"); }
-      if (INCn) { Serial.println("magnet moved towards chip"); }
+      if (DECn == 1) { Serial.println("magnet moved away from chip"); }
+      if (INCn == 1) { Serial.println("magnet moved towards chip"); }
     }
-    if (LIN) { Serial.println("linearity alarm: magnet misaligned? Data questionable."); }
-    if (COF) { Serial.println("cordic overflow: magnet misaligned? Data invalid."); }
+    if (LIN == 1) { Serial.println("linearity alarm: magnet misaligned? Data questionable."); }
+    if (COF == 1) { Serial.println("cordic overflow: magnet misaligned? Data invalid."); }
 }

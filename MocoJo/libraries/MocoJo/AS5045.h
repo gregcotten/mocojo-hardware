@@ -6,7 +6,7 @@
 
 class AS5045{
 	public:
-		AS5045(int chipSelect, int clock, int input, float sensitivity, int debug);
+		AS5045(int chipSelect, int clock, int input, float sensitivity, boolean debug);
 		void update();
 		
 		int getRelativePosition();
@@ -20,7 +20,7 @@ class AS5045{
 		
 		
 
-		int _encoderDebug;
+		boolean _encoderDebug;
 		//Pins
 		int _encoderChipSelectPin; //output to chip select
 		int _encoderClockPin; //output to clock
