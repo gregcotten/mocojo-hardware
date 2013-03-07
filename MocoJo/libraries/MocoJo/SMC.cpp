@@ -64,7 +64,6 @@ void SMC::setMaximumSpeed(int max){
 
 //speed can be [-3200, 3200]
 void SMC::setMotorSpeed(int speed){
-	
 	if (speed >= 0){
 		_serial->write(SMCProtocolSetMotorForward);
 	}
@@ -80,7 +79,7 @@ void SMC::setMotorSpeed(int speed){
 		speed = 3200;
 	}
 	
-	if(speed != 0 && (_minimumSpeed > 0 || _maximumSpeed < 3200)){
+	if(speed != 0){
 		speed = map(speed, 0, 3200, _minimumSpeed, _maximumSpeed);	
 	}
 	
