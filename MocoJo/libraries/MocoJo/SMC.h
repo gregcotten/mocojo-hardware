@@ -7,18 +7,18 @@ class SMC{
 	public:
 		SMC(HardwareSerial &serial, int resetPin, int errorPin);
 		void initialize();
-		boolean isError();
-		void setMotorSpeed(int speed);
+		bool isError();
+		void setMotorSpeed(float speed);
 		void exitSafeStart();
 		void stopMotor();
-		void setMinimumSpeed(int min);
-		void setMaximumSpeed(int max);
+		void setMinimumSpeed(float min);
+		void setMaximumSpeed(float max);
 	private:
 		int getVariable(int variableID);
 		void resetController();
 		HardwareSerial* _serial; //pointer for what serial to use
-		int _minimumSpeed;
-		int _maximumSpeed;
+		float _minimumSpeed;
+		float _maximumSpeed;
 		int _errorPin;
 		int _resetPin;
 };

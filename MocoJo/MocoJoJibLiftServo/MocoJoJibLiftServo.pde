@@ -8,6 +8,7 @@
 #include <SMCProtocolConstants.h>
 #include <AS5045.h>
 #include <ChangeNotification.h>
+#include <MathHelper.h>
 
 //---------------GENERAL------------------
 const int ledPin1 = 13; //LED connected to digital pin 13
@@ -79,7 +80,7 @@ void setup(){
 
 	servoEncoder.setAbsolutePosition(0);
 
-	motorController.setMinimumSpeed(160);
+	motorController.setMinimumSpeed(.05);
 	
 }
 
@@ -109,7 +110,7 @@ void doPIDDuties(){
 	 servoCurrentVelocity = servoEncoder.getVelocity();
 	
 	if(servoPositionPID.Compute() && !isStopped){
-		motorController.setMotorSpeed(motorTargetSpeed);	
+		motorController.setMotorSpeed(MathHelper::fromIntTo01(motorTargetSpeed, 3200));	
 	}
 	
 }
@@ -152,14 +153,14 @@ void honeToPosition(long honePosition){
 	// **servoPositionPID - make sure to change parameters for slow mode!
 
 	//also put servoVelocity != 0
-	motorController.setMaximumSpeed(300);
+	motorController.setMaximumSpeed(.1);
 	servoTargetPosition = honePosition;
 	while (isPlayback && servoCurrentPosition != servoTargetPosition){
 		doPIDDuties();
 		doSerialDuties();
 	}
 	isHoning = false;
-	motorController.setMaximumSpeed(3200);
+	motorController.setMaximumSpeed(1.0);
 
 	// **servoPositionPID - make sure to change parameters for normal mode!
 }

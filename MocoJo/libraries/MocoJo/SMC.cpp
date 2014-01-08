@@ -1,19 +1,19 @@
 #include <SMC.h>
 #include <SMCProtocolConstants.h>
+#include <MathHelper.h>
 
 #include <WProgram.h>
 #include <WString.h>
 
 //default min/max
-int _minimumSpeed = 0;
-int _maximumSpeed = 3200;
+float _minimumSpeed = 0.0;
+float _maximumSpeed = 1.0;
 
 
 SMC::SMC(HardwareSerial &serial, int resetPin, int errorPin){
 	_serial = &serial;
 	_errorPin = errorPin;
 	_resetPin = resetPin;
-	pinMode(_errorPin, INPUT);
 }
 
 void SMC::initialize(){
@@ -21,7 +21,7 @@ void SMC::initialize(){
 	_serial->write(0xAA); //SMC needs to establish the baud rate
 }
 
-boolean SMC::isError(){
+bool SMC::isError(){
 	return digitalRead(_errorPin) == 1;
 }
 
@@ -41,50 +41,31 @@ void SMC::resetController(){
 	delay(5);
 }
 
-void SMC::setMinimumSpeed(int min){
-	if (min < 0){
-		min = 0;
-	}
-	else if (min > 3200){
-		min = 3200;
-	}
-	_minimumSpeed = min;	
+void SMC::setMinimumSpeed(float min){
+	_minimumSpeed = MathHelper::clamp(min, 0.0, 1.0);	
 	
 }
 
-void SMC::setMaximumSpeed(int max){
-	if (max < 0){
-		max = 0;
-	}
-	else if (max > 3200){
-		max = 3200;
-	}
-	_maximumSpeed = max;
+void SMC::setMaximumSpeed(float max){
+	_maximumSpeed = MathHelper::clamp(max, 0.0, 1.0);
 }
 
 //speed can be [-3200, 3200]
-void SMC::setMotorSpeed(int speed){
+void SMC::setMotorSpeed(float speed){
+	int myspeed = 0;
 	if (speed >= 0){
 		_serial->write(SMCProtocolSetMotorForward);
 	}
 	else {
 		_serial->write(SMCProtocolSetMotorReverse);
-		speed = -speed;
 	}
 
-	if(speed < 0){
-		speed = 0;
-	}
-	else if(speed > 3200){
-		speed = 3200;
-	}
+	speed = MathHelper::clamp(abs(speed), _minimumSpeed, _maximumSpeed);
 	
-	if(speed != 0){
-		speed = map(speed, 0, 3200, _minimumSpeed, _maximumSpeed);	
-	}
+	myspeed = MathHelper::from01ToInt(speed, 3200);
 	
-	_serial->write(speed & 0x1F); //speed byte 1
-	_serial->write(speed >> 5); //speed byte 2
+	_serial->write(myspeed & 0x1F); //speed byte 1
+	_serial->write(myspeed >> 5); //speed byte 2
 	
 }
 
