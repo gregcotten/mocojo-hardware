@@ -1,0 +1,10 @@
+{
+	"word_wrap": true,
+	"folders":
+	[
+		{
+			"follow_symlinks": true,
+			"path": "."
+		}
+	]
+}
