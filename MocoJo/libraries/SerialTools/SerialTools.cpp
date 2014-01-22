@@ -48,7 +48,7 @@ void SerialTools::blockUntilBytesArrive(HardwareSerial &serial, int numberOfByte
 	}
 }
 
-boolean blockUntilBytesArrive(HardwareSerial &serial, int numberOfBytes, int timeoutMillis){
+bool SerialTools::blockUntilBytesArrive(HardwareSerial &serial, int numberOfBytes, int timeoutMillis){
 	unsigned long startTime = millis();
 	while( ((&serial)->available()) < numberOfBytes){
 		if((millis() - startTime) > timeoutMillis){

@@ -11,7 +11,7 @@ namespace SerialTools {
 	void writeDummyBytesToSerial(HardwareSerial &serial, int numberOfBytes);
 	void readDummyBytesFromSerial(HardwareSerial &serial, int numberOfBytes);
 	void blockUntilBytesArrive(HardwareSerial &serial, int numberOfBytes);
-	boolean blockUntilBytesArrive(HardwareSerial &serial, int numberOfBytes, int timeoutMillis);
+	bool blockUntilBytesArrive(HardwareSerial &serial, int numberOfBytes, int timeoutMillis);
 }
 
 #endif
