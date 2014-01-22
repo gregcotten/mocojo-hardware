@@ -21,7 +21,7 @@ void SMC::initialize(){
 	_serial->write(0xAA); //SMC needs to establish the baud rate
 }
 
-bool SMC::isError(){
+bool SMC::didError(){
 	return digitalRead(_errorPin) == 1;
 }
 
@@ -36,7 +36,7 @@ void SMC::stopMotor(){
 void SMC::resetController(){
 	pinMode(_resetPin, OUTPUT);
 	digitalWrite(_resetPin, LOW);  // reset SMC
-	delay(1);  // wait 1 ms
+	delay(1);
 	pinMode(_resetPin, INPUT);  // let SMC run again
 	delay(5);
 }
@@ -62,10 +62,10 @@ void SMC::setMotorSpeed(float speed){
 
 	speed = MathHelper::clamp(abs(speed), _minimumSpeed, _maximumSpeed);
 	
-	myspeed = MathHelper::from01ToInt(speed, 3200);
+	int speedAsInt = (int)(speed*3200.0);
 	
-	_serial->write(myspeed & 0x1F); //speed byte 1
-	_serial->write(myspeed >> 5); //speed byte 2
+	_serial->write(speedAsInt & 0x1F); //speed byte 1
+	_serial->write(speedAsInt >> 5); //speed byte 2
 	
 }
 

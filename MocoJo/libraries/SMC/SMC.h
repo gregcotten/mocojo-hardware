@@ -7,7 +7,7 @@ class SMC{
 	public:
 		SMC(HardwareSerial &serial, int resetPin, int errorPin);
 		void initialize();
-		bool isError();
+		bool didError();
 		void setMotorSpeed(float speed);
 		void exitSafeStart();
 		void stopMotor();
