@@ -38,7 +38,7 @@ boolean wheelsEnabled = true;
 //PLAYBACK
 long finalFrame;
 long frameCounter;
-long frameBufferCounter;
+long bufferFrameCounter;
 long amountFreshBufferCounter;
 //----------------------------------------------
 
@@ -178,7 +178,7 @@ long getAxisPositionFromNextFrame(int axisID){
 
 void fillBuffer(){
 	servoJibLift.addTargetPositionToBuffer(getAxisPositionFromNextFrame(servoJibLift.getServoID()));
-	frameBufferCounter++;
+	bufferFrameCounter++;
 	amountFreshBufferCounter++;
 }
 
@@ -187,7 +187,7 @@ void startPlaybackFromComputer()
 	//*********** RESET DATA ***********
 	isPlayback = true;
 	frameCounter = 0;
-	frameBufferCounter = 0;
+	bufferFrameCounter = 0;
 	amountFreshBufferCounter = 0;
 	//**********
 	
@@ -198,9 +198,9 @@ void startPlaybackFromComputer()
 	Logger::writeDebugString("Filling Initial Buffer", true);
 	unsigned long then = millis();
 	//fill buffer until finalFrame is found or we run out of buffer space
-	while(isPlayback && frameBufferCounter < finalFrame && amountFreshBufferCounter < MocoJoServoBufferSize){
+	while(isPlayback && bufferFrameCounter < finalFrame && amountFreshBufferCounter < MocoJoServoBufferSize){
 		fillBuffer();
-		//Logger::writeDebugString(String(frameBufferCounter), true);
+		//Logger::writeDebugString(String(bufferFrameCounter), true);
 	}
 	if(!isPlayback){
 		return;
@@ -217,7 +217,7 @@ void startPlaybackFromComputer()
 
 	while(isPlayback && !allDidHone){
 		if(lastHoneCheck - millis() >= 500){
-			allDidHone = !servoJibLift.isHoning(); // && servo2 && ...
+			allDidHone = !servoJibLift.isHoning(); // && !servo2.isHoning() && ...
 			
 			lastHoneCheck= millis();
 		}
@@ -246,7 +246,7 @@ void runPlayback(){
 	while(isPlayback && frameCounter < finalFrame){
 		doGeneralDuties();
 		doSerialDuties();
-		if(frameBufferCounter < finalFrame && amountFreshBufferCounter < MocoJoServoBufferSize){
+		if(bufferFrameCounter < finalFrame && amountFreshBufferCounter < MocoJoServoBufferSize){
 			fillBuffer();	
 		}
 	}
