@@ -60,7 +60,7 @@ void SMC::setMotorSpeed(float speed){
 		_serial->write(SMCProtocolSetMotorReverse);
 	}
 
-	speed = MathHelper::clamp(abs(speed), _minimumSpeed, _maximumSpeed);
+	speed = MathHelper::clamp(MathHelper::absvalue(speed), _minimumSpeed, _maximumSpeed);
 	
 	int speedAsInt = (int)(speed*3200.0);
 	
