@@ -113,7 +113,7 @@ void AS5045::updatePosition(){
   {
     digitalWrite(_encoderClockPin, HIGH); //clock goes high
     delayMicroseconds(shortdelay);
-    inputstream =digitalRead(_encoderInputPin); // read one bit of data from pin
+    inputstream = digitalRead(_encoderInputPin); // read one bit of data from pin
     packeddata = ((packeddata << 1) + inputstream);// left-shift summing variable, add pin value
     digitalWrite(_encoderClockPin, LOW);
     delayMicroseconds(shortdelay); // end of one clock cycle
