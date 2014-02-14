@@ -17,7 +17,7 @@ class LongBuffer{
 
 		int _bufferSize;
 		int _currentPosition;
-		int _currentBufferPosition;
+		int _currentBufferWritePosition;
 		int _amountFresh;
 
 		

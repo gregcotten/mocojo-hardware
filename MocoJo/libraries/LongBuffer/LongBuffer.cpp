@@ -3,7 +3,7 @@
 long _buffer[1];
 int _bufferSize;
 int _currentPosition;
-int _currentBufferPosition;
+int _currentBufferWritePosition;
 int _amountFresh;
 
 LongBuffer::LongBuffer(int bufferSize){
@@ -22,13 +22,13 @@ bool LongBuffer::isFull(){
 
 void LongBuffer::reset(){
 	_currentPosition = 0;
-	_currentBufferPosition = 0;
+	_currentBufferWritePosition = 0;
 	_amountFresh = 0;
 }
 
 void LongBuffer::addLong(long data){
-	_buffer[_currentBufferPosition] = data;
-	_currentBufferPosition = (_currentBufferPosition + 1) % _bufferSize;
+	_buffer[_currentBufferWritePosition] = data;
+	_currentBufferWritePosition = (_currentBufferWritePosition + 1) % _bufferSize;
 	_amountFresh++;
 }
 
