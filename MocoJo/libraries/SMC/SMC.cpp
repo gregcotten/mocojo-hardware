@@ -57,7 +57,6 @@ void SMC::setMotorSpeed(float speed){
 	}
 	speed = MathHelper::clamp(MathHelper::absvalue(speed), _minimumSpeed, _maximumSpeed);
 	int speedAsInt = (int)(speed*3200.0);
-
 	
 	_serial->write(speedAsInt & 0x1F); //speed byte 1
 	_serial->write(speedAsInt >> 5); //speed byte 2
