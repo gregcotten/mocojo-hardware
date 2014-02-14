@@ -52,9 +52,9 @@ bool SerialTools::blockUntilBytesArrive(HardwareSerial &serial, int numberOfByte
 	unsigned long startTime = millis();
 	while( ((&serial)->available()) < numberOfBytes){
 		if((millis() - startTime) > timeoutMillis){
-			return true;
+			return false;
 		}
 	}
-	return false;
+	return true;
 }
 
