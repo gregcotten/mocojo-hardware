@@ -6,7 +6,7 @@
 class MocoJoServoRepresentation{
 	public:
 		MocoJoServoRepresentation(HardwareSerial &serial, int ID);
-		boolean handshake(); //returns true if handshake successful
+		bool handshake(); //returns true if handshake successful
 		int getServoID();
 		void exitSafeStart();
 		long getCurrentPosition();
@@ -17,12 +17,12 @@ class MocoJoServoRepresentation{
 		void startPlayback();
 		void stopPlayback();
 		void proceedToHone();
-		boolean isHoning();
-		boolean isInitialized();
+		bool isHoning();
+		bool isInitialized();
 
 	private:
 		void initialize();
-		boolean _isInitialized;
+		bool _isInitialized;
 		HardwareSerial* _serial; //pointer for what serial to use
 };
 #endif
