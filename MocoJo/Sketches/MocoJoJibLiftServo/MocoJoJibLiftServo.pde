@@ -53,7 +53,7 @@ boolean proceedToHone = false;
 
 
 //PID
-PID servoPositionPID(&servoCurrentPosition, &motorTargetSpeed, &servoTargetPosition,15,0,0, DIRECT);
+PID servoPositionPID(&servoCurrentPosition, &motorTargetSpeed, &servoTargetPosition,1,1,1, DIRECT);
 
 const int servoPIDSampleTimeMillis = 1;
 //-----------------------------------------------
@@ -66,7 +66,7 @@ SMC motorController(Serial, 2, 3); //change this to Serial2
 
 
 void setup(){
-	Serial.begin(400000);
+	Serial.begin(9600);
 	Serial1.begin(MocoJoServoBaudRate);
 	
 	pinMode(ledPin1, OUTPUT); // visual signal of I/O to chip
@@ -93,14 +93,14 @@ void loop(){
 }
 
 void initialize(){
-	digitalWrite(ledPin2, HIGH); //visual indication of initialization
+	
 	isInitialized = true;
 	attachInterrupt(MCU_VirtualShutter_SyncIn_CN_Pin, syncInterrupt, RISING);
 
 	motorController.initialize();
 	motorController.exitSafeStart();
 	isStopped = false;
-	digitalWrite(ledPin1, HIGH); //visual indication of motor started up
+	digitalWrite(ledPin1, HIGH); //visual indication of initialization
 }
 
 void doPIDDuties(){
