@@ -23,19 +23,11 @@ boolean isHoning = false;
 
 long frameCounter = 0; //local use
 
-//--------------Moco GPIO------------------------
-const int MCU_VirtualShutter_SyncIn_Pin = 11; //HIGH is shutter off cycle, LOW is shutter on cycle
-const cn MCU_VirtualShutter_SyncIn_CN_Pin = CN_10; //CN_10 is pin 11
-//----------------------------------------------
-
 //--------------Servo Stuff-----------------------
 const int servoID = MocoAxisJibLift;
 
 long servoCurrentPosition = 0;
 long servoCurrentVelocity = 0;
-
-volatile long servoPositionAtLastSync=0;
-volatile long servoVelocityAtLastSync=0;
 
 long servoResolution = 8*4095;
 
@@ -95,7 +87,6 @@ void loop(){
 void initialize(){
 	
 	isInitialized = true;
-	attachInterrupt(MCU_VirtualShutter_SyncIn_CN_Pin, syncInterrupt, RISING);
 
 	motorController.initialize();
 	motorController.exitSafeStart();
@@ -123,18 +114,6 @@ void doSerialDuties()
 	if(Serial.available() >= 6){
 		//Serial.println("Packet received");
 		processInstructionFromMCU();
-	}
-}
-
-
-
-void syncInterrupt(){
-	servoPositionAtLastSync = servoCurrentPosition;
-	servoVelocityAtLastSync = servoCurrentVelocity;
-	
-	if (isPlayback){
-		servoTargetPosition = servoTargetPositionBuffer.nextLong();
-		frameCounter++;
 	}
 }
 
@@ -281,10 +260,6 @@ void processInstructionFromMCU(){
 
 		case MocoJoServoGetMotorTargetSpeed:
 			MocoJoServoCommunication::writeMotorTargetSpeedToMCU(Serial, servoID, motorTargetSpeed);
-			break;
-
-		case MocoJoServoGetPositionAtLastSync:
-			MocoJoServoCommunication::writePositionAtLastSyncToMCU(Serial, servoID, servoPositionAtLastSync);
 			break;
 
 		case MocoJoServoGetIsHoning:
