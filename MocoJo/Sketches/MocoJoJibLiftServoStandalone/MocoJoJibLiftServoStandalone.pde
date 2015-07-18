@@ -7,7 +7,6 @@
 #include <SMC.h>
 #include <SMCProtocolConstants.h>
 #include <AS5045.h>
-#include <ChangeNotification.h>
 #include <MathHelper.h>
 
 //---------------GENERAL------------------
