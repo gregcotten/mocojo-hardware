@@ -44,7 +44,7 @@ boolean proceedToHone = false;
 
 
 //PID
-PID servoPositionPID(&servoCurrentPosition, &motorTargetSpeed, &servoTargetPosition,1,1,1, DIRECT);
+PID servoPositionPID(&servoCurrentPosition, &motorTargetSpeed, &servoTargetPosition,3,0,0, DIRECT);
 
 const int servoPIDSampleTimeMillis = 1;
 //-----------------------------------------------
