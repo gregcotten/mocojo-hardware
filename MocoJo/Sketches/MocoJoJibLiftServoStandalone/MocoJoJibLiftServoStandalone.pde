@@ -114,11 +114,17 @@ void doPIDDuties(){
 /*
 	All serial communication is interpreted here.
 */
-void doSerialDuties()
-{
+void doSerialDuties(){
+	// unsigned long startTime = millis();
+	// while(Serial.available() >= 6 && millis()-startTime < 5){
+	// 	//Serial.println("Packet received");
+	// 	if(Serial.available() >= 6){
+	// 		processInstructionFromMCU();
+	// 	}
+	// }
+
 	if(Serial.available() >= 6){
-		//Serial.println("Packet received");
-		processInstructionFromMCU();
+			processInstructionFromMCU();
 	}
 }
 
