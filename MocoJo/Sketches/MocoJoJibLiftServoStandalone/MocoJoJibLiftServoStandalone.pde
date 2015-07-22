@@ -93,6 +93,12 @@ void initialize(){
 	digitalWrite(ledPin1, HIGH); //visual indication of initialization
 }
 
+void deinitialize(){
+	stopEverything();
+	isInitialized = false;
+	digitalWrite(ledPin1, LOW);
+}
+
 void doPIDDuties(){
 	
 	 servoEncoder.update();
