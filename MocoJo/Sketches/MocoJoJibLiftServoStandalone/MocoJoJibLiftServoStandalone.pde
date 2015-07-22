@@ -44,7 +44,7 @@ boolean proceedToHone = false;
 
 
 //PID
-PID servoPositionPID(&servoCurrentPosition, &motorTargetSpeed, &servoTargetPosition,3,0,0, DIRECT);
+PID servoPositionPID(&servoCurrentPosition, &motorTargetSpeed, &servoTargetPosition,3,0,.05, DIRECT);
 
 const int servoPIDSampleTimeMillis = 1;
 //-----------------------------------------------
@@ -71,7 +71,7 @@ void setup(){
 
 	servoEncoder.setAbsolutePosition(0);
 
-	motorController.setMinimumSpeed(.05);
+	motorController.setMinimumSpeed(.02);
 	
 }
 
@@ -297,7 +297,7 @@ void processInstructionFromMCU(){
 			break;
 
 		case MocoJoServoSetMaxSpeed:
-			//implement this?
+			motorController.setMaximumSpeed(MathHelper::absvalue((float)data/3200.0));
 			break;
 		
 		default:
