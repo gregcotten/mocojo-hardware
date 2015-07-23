@@ -299,6 +299,10 @@ void processInstructionFromMCU(){
 		case MocoJoServoSetMaxSpeed:
 			motorController.setMaximumSpeed(MathHelper::absvalue((float)data/3200.0));
 			break;
+
+		case MocoJoServoSetMinSpeed:
+			motorController.setMinimumSpeed(MathHelper::absvalue((float)data/3200.0));
+			break;
 		
 		default:
 			break;
