@@ -1,6 +1,6 @@
 #ifndef PID_v1_h
 #define PID_v1_h
-#define LIBRARY_VERSION	1.0.0
+#define LIBRARY_VERSION	1.1.1
 
 class PID
 {
@@ -15,7 +15,7 @@ class PID
   #define REVERSE  1
 
   //commonly used functions **************************************************************************
-    PID(long*, long*, long*,        // * constructor.  links the PID to the Input, Output, and 
+    PID(double*, double*, double*,        // * constructor.  links the PID to the Input, Output, and 
         double, double, double, int);     //   Setpoint.  Initial tuning parameters are also set here
 	
     void SetMode(int Mode);               // * sets PID to either Manual (0) or Auto (non-0)
@@ -25,7 +25,7 @@ class PID
                                           //   calculation frequency can be set using SetMode
                                           //   SetSampleTime respectively
 
-    void SetOutputLimits(long, long); //clamps the output to a specific range. 0-255 by default, but
+    void SetOutputLimits(double, double); //clamps the output to a specific range. 0-255 by default, but
 										  //it's likely the user will want to change this depending on
 										  //the application
 	
@@ -64,14 +64,13 @@ class PID
 
 	int controllerDirection;
 
-    long *myInput;              // * Pointers to the Input, Output, and Setpoint variables
-    long *myOutput;             //   This creates a hard link between the variables and the 
-    long *mySetpoint;           //   PID, freeing the user from having to constantly tell us
+    double *myInput;              // * Pointers to the Input, Output, and Setpoint variables
+    double *myOutput;             //   This creates a hard link between the variables and the 
+    double *mySetpoint;           //   PID, freeing the user from having to constantly tell us
                                   //   what these values are.  with pointers we'll just know.
 			  
 	unsigned long lastTime;
-	double ITerm;
-	double lastInput;
+	double ITerm, lastInput;
 
 	unsigned long SampleTime;
 	double outMin, outMax;

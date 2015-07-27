@@ -1,5 +1,5 @@
 /**********************************************************************************************
- * Arduino PID Library - Version 1.0.1
+ * Arduino PID Library - Version 1.1.1
  * by Brett Beauregard <br3ttb@gmail.com> brettbeauregard.com
  *
  * This Library is licensed under a GPLv3 License
@@ -17,7 +17,7 @@
  *    The parameters specified here are those for for which we can't set up 
  *    reliable defaults, so we need to have the user set them.
  ***************************************************************************/
-PID::PID(long* Input, long* Output, long* Setpoint,
+PID::PID(double* Input, double* Output, double* Setpoint,
         double Kp, double Ki, double Kd, int ControllerDirection)
 {
 	
@@ -52,8 +52,8 @@ bool PID::Compute()
    if(timeChange>=SampleTime)
    {
       /*Compute all the working error variables*/
-	  double input = (double)*myInput;
-      double error = (double)*mySetpoint - input;
+	  double input = *myInput;
+      double error = *mySetpoint - input;
       ITerm+= (ki * error);
       if(ITerm > outMax) ITerm= outMax;
       else if(ITerm < outMin) ITerm= outMin;
@@ -63,7 +63,7 @@ bool PID::Compute()
       double output = kp * error + ITerm- kd * dInput;
       
 	  if(output > outMax) output = outMax;
-      else if(output < (double)outMin) output = outMin;
+      else if(output < outMin) output = outMin;
 	  *myOutput = output;
 	  
       /*Remember some variables for next time*/
@@ -122,11 +122,11 @@ void PID::SetSampleTime(int NewSampleTime)
  *  want to clamp it from 0-125.  who knows.  at any rate, that can all be done
  *  here.
  **************************************************************************/
-void PID::SetOutputLimits(long Min, long Max)
+void PID::SetOutputLimits(double Min, double Max)
 {
    if(Min >= Max) return;
-   outMin = (double)Min;
-   outMax = (double)Max;
+   outMin = Min;
+   outMax = Max;
  
    if(inAuto)
    {

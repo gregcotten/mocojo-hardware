@@ -25,14 +25,14 @@ long frameCounter = 0; //local use
 //--------------Servo Stuff-----------------------
 const int servoID = MocoAxisJibLift;
 
-long servoCurrentPosition = 0;
+double servoCurrentPosition = 0;
 long servoCurrentVelocity = 0;
 
 long servoResolution = 8*4095;
 
-long servoTargetPosition = 0;
+double servoTargetPosition = 0;
 long servoTargetVelocity = 0;
-long motorTargetSpeed = 0;
+double motorTargetSpeed = 0;
 
 //buffer
 LongBuffer servoTargetPositionBuffer(MocoJoServoBufferSize);
