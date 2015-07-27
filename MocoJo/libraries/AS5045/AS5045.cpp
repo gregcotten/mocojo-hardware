@@ -73,14 +73,14 @@ void AS5045::setAbsolutePosition(long desiredPosition){
   _encoderAbsolutePositionOffset = desiredPosition - _encoderAbsolutePosition;
 }
 
-long AS5045::getVelocity(){
+float AS5045::getVelocity(){
   return _encoderVelocity;
 }
 
 //Currently takes 110 microseconds to update @ chipKIT 96MHz
 void AS5045::update(){
   updatePosition();
-  //updateVelocity();	
+  updateVelocity();	
 
   if (_encoderDebug == true){
     checkErrors();
@@ -91,9 +91,9 @@ void AS5045::update(){
 
 void AS5045::updateVelocity(){
 
-  unsigned long currentTimeMillis = micros();
-  if (currentTimeMillis - _timeAtLastVelocityUpdate >= 5000){
-    _encoderVelocity = (long)(10000.0*(double)(_encoderAbsolutePosition-_encoderPreviousAbsolutePosition) / (double)(currentTimeMillis - _timeAtLastVelocityUpdate));
+  unsigned long currentTimeMillis = millis();
+  if (currentTimeMillis - _timeAtLastVelocityUpdate >= 20){
+    _encoderVelocity = (float)(_encoderAbsolutePosition-_encoderPreviousAbsolutePosition) / (float)(currentTimeMillis - _timeAtLastVelocityUpdate);
     _timeAtLastVelocityUpdate = currentTimeMillis;
     _encoderPreviousAbsolutePosition = _encoderAbsolutePosition;
   }

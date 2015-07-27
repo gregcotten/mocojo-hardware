@@ -12,7 +12,7 @@ class AS5045{
 		int getRelativePosition();
 		long getAbsolutePosition();
 		void setAbsolutePosition(long desiredPosition);
-		long getVelocity();
+		float getVelocity();
 	private:
 		void updatePosition();
 		void updateVelocity();
@@ -38,7 +38,7 @@ class AS5045{
 		//Velocity Data
 		unsigned long _timeAtLastVelocityUpdate;
 		unsigned long _timeInMillisecondsAtLastUpdate;
-		long _encoderVelocity;
+		float _encoderVelocity;
 
 		//Backend
 		int inputstream; //one bit read from pin
